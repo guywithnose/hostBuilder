@@ -3,7 +3,6 @@ package hosts
 import (
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -13,22 +12,19 @@ import (
 func TestOutputHostLinesMultipleLinesPerIP(t *testing.T) {
 	hostLines := runOutputHosts(t, false)
 	expectedLines := "10.0.0.2 bing\n10.0.0.2 foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost\n127.0.0.1 localhost.localdomain\n127.0.0.1 localhost4\n127.0.0.1 localhost4.localdomain4\n127.0.1.1 bar\n127.0.1.1 foo\n::1 ip6-localhost\n::1 ip6-loopback\n::1 localhost\n::1 localhost.localdomain\n::1 localhost6\n::1 localhost6.localdomain6\nfe00::0 ip6-localnet\nff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\nff02::2 ip6-allrouters\n"
-	if hostLines != expectedLines {
-		t.Fatalf("File was %s, expected %s", hostLines, expectedLines)
-	}
+	assert.Equal(t, expectedLines, hostLines)
 }
 
 func TestOutputHostLinesOneLinePerIP(t *testing.T) {
 	hostLines := runOutputHosts(t, true)
 	expectedLines := "10.0.0.2 bing foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4\n127.0.1.1 bar foo\n::1 ip6-localhost ip6-loopback localhost localhost.localdomain localhost6 localhost6.localdomain6\nfe00::0 ip6-localnet\nff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\nff02::2 ip6-allrouters\n"
-	if hostLines != expectedLines {
-		t.Fatalf("File was %s, expected %s", hostLines, expectedLines)
-	}
+	assert.Equal(t, expectedLines, hostLines)
 }
 
 func TestReadHostsFile(t *testing.T) {
 	outputFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, outputFile.Name())
 	hostsLines := `10.0.0.2 bing
 10.0.0.2 foo.bar
 10.0.0.3 foo.bar
@@ -70,11 +66,7 @@ ff02::2 ip6-allrouters
 	hosts, err := ReadHostsFile(outputFile.Name())
 	assert.Nil(t, err)
 
-	if !reflect.DeepEqual(hosts, expectedHosts) {
-		t.Fatalf("File was \n%v\n, expected \n%v\n", hosts, expectedHosts)
-	}
-
-	assert.Nil(t, os.Remove(outputFile.Name()))
+	assert.Equal(t, expectedHosts, hosts)
 }
 
 func TestReadHostsFileInvalidHostsFile(t *testing.T) {
@@ -94,6 +86,7 @@ func getTestingConfig() *config.HostsConfig {
 func runOutputHosts(t *testing.T, oneLinePerIP bool) string {
 	outputFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, outputFile.Name())
 
 	configData := getTestingConfig()
 
@@ -103,6 +96,9 @@ func runOutputHosts(t *testing.T, oneLinePerIP bool) string {
 	hostLines, err := ioutil.ReadFile(outputFile.Name())
 	assert.Nil(t, err)
 
-	assert.Nil(t, os.Remove(outputFile.Name()))
 	return string(hostLines)
+}
+
+func removeFile(t *testing.T, fileName string) {
+	assert.Nil(t, os.Remove(fileName))
 }

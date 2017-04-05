@@ -168,3 +168,8 @@ func (util *AwsUtil) getRegions() ([]string, error) {
 
 	return regionNames, nil
 }
+
+// SetProfile sets the aws credential profile to use
+func (util *AwsUtil) SetProfile(profile string) {
+	util.profileName = profile
+}

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -15,6 +14,7 @@ import (
 func TestReadHostsFile(t *testing.T) {
 	hostsFile, err := ioutil.TempFile("/tmp", "hosts")
 	assert.Nil(t, err)
+	defer removeFile(t, hostsFile.Name())
 	hostsLines := `10.0.0.2 bing
 10.0.0.2 foo.bar
 10.0.0.3 foo.bar
@@ -31,6 +31,7 @@ ff02::2 ip6-allrouters
 
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 	set := flag.NewFlagSet("test", 0)
 	assert.Nil(t, err)
 
@@ -57,22 +58,15 @@ ff02::2 ip6-allrouters
 		"localhost6.localdomain6": config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
 		"localhost.localdomain":   config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
 	}
-	if !reflect.DeepEqual(configData.Hosts, expectedHosts) {
-		t.Fatalf("File was \n%v\n, expected \n%v\n", configData.Hosts, expectedHosts)
-	}
 
-	expectedLocalHosts := []string{"foo"}
-	if !reflect.DeepEqual(configData.LocalHostnames, expectedLocalHosts) {
-		t.Fatalf("File was \n%v\n, expected \n%v\n", configData.LocalHostnames, expectedLocalHosts)
-	}
-
-	assert.Nil(t, os.Remove(hostsFile.Name()))
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, expectedHosts, configData.Hosts)
+	assert.Equal(t, []string{"foo"}, configData.LocalHostnames)
 }
 
 func TestReadHostsFileBadConfigFile(t *testing.T) {
 	hostsFile, err := ioutil.TempFile("/tmp", "hosts")
 	assert.Nil(t, err)
+	defer removeFile(t, hostsFile.Name())
 	hostsLines := `10.0.0.2 bing
 10.0.0.2 foo.bar
 10.0.0.3 foo.bar
@@ -96,13 +90,12 @@ ff02::2 ip6-allrouters
 	c := cli.NewContext(nil, set, nil)
 	err = CmdCreateConfig(c)
 	assert.EqualError(t, err, "open /doesntexist: permission denied")
-
-	assert.Nil(t, os.Remove(hostsFile.Name()))
 }
 
 func TestReadHostsFileNoConfigFile(t *testing.T) {
 	hostsFile, err := ioutil.TempFile("/tmp", "hosts")
 	assert.Nil(t, err)
+	defer removeFile(t, hostsFile.Name())
 	hostsLines := `10.0.0.2 bing
 10.0.0.2 foo.bar
 10.0.0.3 foo.bar
@@ -125,13 +118,12 @@ ff02::2 ip6-allrouters
 	c := cli.NewContext(nil, set, nil)
 	err = CmdCreateConfig(c)
 	assert.EqualError(t, err, "You must specify a config file")
-
-	assert.Nil(t, os.Remove(hostsFile.Name()))
 }
 
 func TestReadHostsFileBadHostsFile(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 	set := flag.NewFlagSet("test", 0)
 	assert.Nil(t, err)
 
@@ -140,5 +132,33 @@ func TestReadHostsFileBadHostsFile(t *testing.T) {
 	c := cli.NewContext(nil, set, nil)
 	err = CmdCreateConfig(c)
 	assert.EqualError(t, err, "open /doesntexist: no such file or directory")
-	assert.Nil(t, os.Remove(configFile.Name()))
+}
+
+func TestCompleteCreateConfig(t *testing.T) {
+	app, writer := appWithWriter()
+	app.Commands = []cli.Command{
+		{
+			Name: "createConfig",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "hostsFile, hosts",
+				},
+			},
+		},
+	}
+	set := flag.NewFlagSet("test", 0)
+	c := cli.NewContext(app, set, nil)
+	CompleteCreateConfig(c)
+
+	assert.Equal(t, "--hostsFile\n", writer.String())
+}
+
+func TestCompleteCreateConfigHostsFile(t *testing.T) {
+	app, writer := appWithWriter()
+	set := flag.NewFlagSet("test", 0)
+	os.Args = []string{"hostBuilder", "createConfig", "--hostsFile", "--completion"}
+	c := cli.NewContext(app, set, nil)
+	CompleteCreateConfig(c)
+
+	assert.Equal(t, "fileCompletion\n", writer.String())
 }

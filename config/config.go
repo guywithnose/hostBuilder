@@ -9,17 +9,17 @@ import (
 
 // HostsConfig defines the structure of the hosts config file
 type HostsConfig struct {
-	LocalHostnames []string            `json:"localHostnames"`
-	IPv6Defaults   bool                `json:"ipV6Defaults"`
-	Hosts          map[string]Host     `json:"hosts"`
-	GlobalIPs      map[string]string   `json:"globalIPs"`
-	Groups         map[string][]string `json:"groups"`
+	LocalHostnames []string            `json:"localHostnames,omitempty"`
+	IPv6Defaults   bool                `json:"ipV6Defaults,omitempty"`
+	Hosts          map[string]Host     `json:"hosts,omitempty"`
+	GlobalIPs      map[string]string   `json:"globalIPs,omitempty"`
+	Groups         map[string][]string `json:"groups,omitempty"`
 }
 
 // Host defines the data associated with a hostname
 type Host struct {
-	Current string            `json:"current"`
-	Options map[string]string `json:"options"`
+	Current string            `json:"current,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 }
 
 // LoadConfigFromFile loads a HostsConfig from a file

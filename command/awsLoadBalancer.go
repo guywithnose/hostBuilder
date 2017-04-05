@@ -11,12 +11,15 @@ import (
 )
 
 // CmdAwsLoadBalancer adds aws load balancer information to the configuration
-func CmdAwsLoadBalancer(c *cli.Context) error {
-	return CmdAwsInstancesHelper(c, awsUtil.NewAwsUtil(c.String("profile")))
+func CmdAwsLoadBalancer(util awsUtil.AwsInterface) func(*cli.Context) error {
+	return func(c *cli.Context) error {
+		return CmdAwsLoadBalancerHelper(c, util)
+	}
 }
 
 // CmdAwsLoadBalancerHelper uses the given awsUtil to add aws load balancer information to the configuration
 func CmdAwsLoadBalancerHelper(c *cli.Context, util awsUtil.AwsInterface) error {
+	util.SetProfile(c.String("profile"))
 	if c.NArg() != 0 {
 		return cli.NewExitError("Usage: \"hostBuilder aws loadBalancers\"", 1)
 	}
@@ -44,20 +47,21 @@ func CmdAwsLoadBalancerHelper(c *cli.Context, util awsUtil.AwsInterface) error {
 }
 
 // CompleteAwsLoadBalancer handles bash autocompletion for the 'aws loadBalancers' command
-func CompleteAwsLoadBalancer(c *cli.Context) {
-	CompleteAwsLoadBalancerHelper(c, awsUtil.NewAwsUtil(""))
+func CompleteAwsLoadBalancer(util awsUtil.AwsInterface) func(c *cli.Context) {
+	return func(c *cli.Context) {
+		CompleteAwsLoadBalancerHelper(c, util)
+	}
 }
 
 // CompleteAwsLoadBalancerHelper handles bash autocompletion for the 'aws instances' command
 func CompleteAwsLoadBalancerHelper(c *cli.Context, util awsUtil.AwsInterface) {
 	lastParam := os.Args[len(os.Args)-2]
-
-	profiles, err := util.ListAllProfiles()
-	if err != nil {
-		return
-	}
-
 	if lastParam == "--profile" {
+		profiles, err := util.ListAllProfiles()
+		if err != nil {
+			return
+		}
+
 		for _, profile := range profiles {
 			fmt.Fprintln(c.App.Writer, profile)
 		}

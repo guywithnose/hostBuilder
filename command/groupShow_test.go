@@ -1,9 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,23 +9,15 @@ import (
 )
 
 func TestCmdGroupShow(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo"}))
 
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdGroupShow(c))
 
-	expectedOutput := "foo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "foo\n", writer.String())
 }
 
 func TestCmdGroupShowUsage(t *testing.T) {
@@ -56,66 +46,41 @@ func TestCmdGroupShowBadConfigFile(t *testing.T) {
 }
 
 func TestCmdGroupShowBadGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"food"}))
-	set.String("config", configFileName, "doc")
 	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
 	c := cli.NewContext(app, set, nil)
 	err := CmdGroupShow(c)
 	assert.EqualError(t, err, "Group food does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCompleteGroupShowGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupShow(c)
 
-	expectedOutput := "foo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "foo\n", writer.String())
 }
 
 func TestCompleteGroupShowComplete(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupShow(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "", writer.String())
 }
 
 func TestCompleteGroupShowNoConfig(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupShow(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "", writer.String())
 }

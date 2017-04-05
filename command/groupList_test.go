@@ -1,9 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,26 +9,17 @@ import (
 )
 
 func TestCmdGroupList(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdGroupList(c))
-
-	expectedOutput := "foo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "foo\n", writer.String())
 }
 
 func TestCmdGroupListUsage(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
-	assert.Nil(t, set.Parse([]string{"abc"}))
+	assert.Nil(t, set.Parse([]string{"def"}))
 	c := cli.NewContext(nil, set, nil)
 
 	assert.EqualError(t, CmdGroupList(c), "Usage: \"hostBuilder group list\"")

@@ -28,7 +28,7 @@ func CmdBuild(c *cli.Context) error {
 func CompleteBuild(c *cli.Context) {
 	lastParam := os.Args[len(os.Args)-2]
 	if lastParam == "--output" {
-		fmt.Println("fileCompletion")
+		fmt.Fprintln(c.App.Writer, "fileCompletion")
 		return
 	}
 

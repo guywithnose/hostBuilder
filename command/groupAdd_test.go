@@ -1,10 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
-	"reflect"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -13,23 +10,17 @@ import (
 )
 
 func TestCmdGroupAdd(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	assert.Nil(t, set.Parse([]string{"foo", "bar"}))
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 
-	set.String("config", configFileName, "doc")
+	assert.Nil(t, set.Parse([]string{"foo", "bar"}))
 	c := cli.NewContext(nil, set, nil)
 	assert.Nil(t, CmdGroupAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
-	expectedGroup := []string{"baz.com", "goo", "bar"}
-	if !reflect.DeepEqual(modifiedConfigData.Groups["foo"], expectedGroup) {
-		t.Fatalf("Group foo was %v, expected %v", modifiedConfigData.Groups["foo"], expectedGroup)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, []string{"baz.com", "goo", "bar"}, modifiedConfigData.Groups["foo"])
 }
 
 func TestCmdGroupAddUsage(t *testing.T) {
@@ -58,117 +49,75 @@ func TestCmdGroupAddBadConfigFile(t *testing.T) {
 }
 
 func TestCmdGroupAddBadGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"food", "bar"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	assert.Nil(t, CmdGroupAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
-	expectedGroup := []string{"bar"}
-	if !reflect.DeepEqual(modifiedConfigData.Groups["food"], expectedGroup) {
-		t.Fatalf("Group food was %v, expected %v", modifiedConfigData.Groups["food"], expectedGroup)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, []string{"bar"}, modifiedConfigData.Groups["food"])
 }
 
 func TestCmdGroupAddBadHostName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo", "bart"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	err := CmdGroupAdd(c)
 	assert.EqualError(t, err, "Hostname bart does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCmdGroupAddAlreadyExists(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo", "goo"}))
 
-	set.String("config", configFileName, "doc")
 	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.ErrWriter = writer
 	c := cli.NewContext(app, set, nil)
 	err := CmdGroupAdd(c)
 	assert.EqualError(t, err, "Group foo already contains goo")
-
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCompleteGroupAddGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupAdd(c)
 
-	expectedOutput := "foo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "foo\n", writer.String())
 }
 
 func TestCompleteGroupAddHostName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupAdd(c)
 
-	expectedOutput := "bar\nbaz.com\ngoo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "bar\nbaz.com\ngoo\n", writer.String())
 }
 
 func TestCompleteGroupAddComplete(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo", "bar"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupAdd(c)
 
-	expectedOutput := "\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "\n", writer.String())
 }
 
 func TestCompleteGroupAddNoConfig(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupAdd(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "", writer.String())
 }

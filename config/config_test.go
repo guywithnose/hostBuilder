@@ -12,6 +12,7 @@ import (
 func TestWriteConfig(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	configData := getTestingConfig()
 
@@ -21,11 +22,7 @@ func TestWriteConfig(t *testing.T) {
 	configBytes, err := ioutil.ReadFile(configFile.Name())
 	assert.Nil(t, err)
 
-	if string(configBytes) != getTestingConfigJSONString() {
-		t.Fatalf("File was %s, expected %s", configBytes, getTestingConfigJSONString())
-	}
-
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, getTestingConfigJSONString(), string(configBytes))
 }
 
 func TestWriteConfigInvalidFile(t *testing.T) {
@@ -37,6 +34,7 @@ func TestWriteConfigInvalidFile(t *testing.T) {
 func TestLoadConfigFromFile(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	err = ioutil.WriteFile(configFile.Name(), []byte(getTestingConfigJSONString()), 0644)
 	assert.Nil(t, err)
@@ -44,13 +42,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 	configData, err := LoadConfigFromFile(configFile.Name())
 	assert.Nil(t, err)
 
-	expectedConfigData := getTestingConfig()
-
-	if !reflect.DeepEqual(configData, expectedConfigData) {
-		t.Fatalf("File was %v, expected %v", configData, expectedConfigData)
-	}
-
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, getTestingConfig(), configData)
 }
 
 func TestLoadConfigFromFileInvalidFile(t *testing.T) {
@@ -61,18 +53,19 @@ func TestLoadConfigFromFileInvalidFile(t *testing.T) {
 func TestLoadConfigFromFileInvalidJSON(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	err = ioutil.WriteFile(configFile.Name(), []byte("{"), 0644)
 	assert.Nil(t, err)
 
 	_, err = LoadConfigFromFile(configFile.Name())
 	assert.EqualError(t, err, "unexpected end of JSON input")
-	assert.Nil(t, os.Remove(configFile.Name()))
 }
 
 func TestLoadEmptyConfigAndWrite(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	err = ioutil.WriteFile(configFile.Name(), []byte("{}"), 0644)
 	assert.Nil(t, err)
@@ -86,23 +79,13 @@ func TestLoadEmptyConfigAndWrite(t *testing.T) {
 	configBytes, err := ioutil.ReadFile(configFile.Name())
 	assert.Nil(t, err)
 
-	expectedJSONString := `{
-  "localHostnames": [],
-  "ipV6Defaults": false,
-  "hosts": {},
-  "globalIPs": {},
-  "groups": {}
-}`
-	if string(configBytes) != expectedJSONString {
-		t.Fatalf("File was %s, expected %s", configBytes, expectedJSONString)
-	}
-
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, `{}`, string(configBytes))
 }
 
 func TestLoadEmptyHostConfigAndWrite(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	err = ioutil.WriteFile(configFile.Name(), []byte(`{"hosts":{"hostname":{}}}`), 0644)
 	assert.Nil(t, err)
@@ -117,24 +100,12 @@ func TestLoadEmptyHostConfigAndWrite(t *testing.T) {
 	assert.Nil(t, err)
 
 	expectedJSONString := `{
-  "localHostnames": [],
-  "ipV6Defaults": false,
   "hosts": {
-    "hostname": {
-      "current": "",
-      "options": {}
-    }
-  },
-  "globalIPs": {},
-  "groups": {}
+    "hostname": {}
+  }
 }`
-	if string(configBytes) != expectedJSONString {
-		t.Fatalf("File was %s, expected %s", configBytes, expectedJSONString)
-	}
-
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, expectedJSONString, string(configBytes))
 }
-
 func TestBuildConfigFromHosts(t *testing.T) {
 	hosts := map[string][]string{
 		"bing":                    []string{"10.0.0.2"},
@@ -215,4 +186,8 @@ func getTestingConfigJSONString() string {
     ]
   }
 }`
+}
+
+func removeFile(t *testing.T, fileName string) {
+	assert.Nil(t, os.Remove(fileName))
 }

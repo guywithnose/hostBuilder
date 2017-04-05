@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/guywithnose/hostBuilder/awsUtil"
 	"github.com/guywithnose/hostBuilder/command"
 	"github.com/urfave/cli"
 )
@@ -185,16 +186,16 @@ var Commands = []cli.Command{
 				Name:         "loadBalancers",
 				Aliases:      []string{"l", "lb"},
 				Usage:        "Add load balancer information to the configuration",
-				Action:       command.CmdAwsLoadBalancer,
-				BashComplete: command.CompleteAwsLoadBalancer,
+				Action:       command.CmdAwsLoadBalancer(new(awsUtil.AwsUtil)),
+				BashComplete: command.CompleteAwsLoadBalancer(new(awsUtil.AwsUtil)),
 				Flags:        []cli.Flag{profileFlag},
 			},
 			{
 				Name:         "instances",
 				Aliases:      []string{"i"},
 				Usage:        "Add instance information to the configuration",
-				Action:       command.CmdAwsInstances,
-				BashComplete: command.CompleteAwsInstances,
+				Action:       command.CmdAwsInstances(new(awsUtil.AwsUtil)),
+				BashComplete: command.CompleteAwsInstances(new(awsUtil.AwsUtil)),
 				Flags: []cli.Flag{
 					profileFlag,
 					cli.StringFlag{

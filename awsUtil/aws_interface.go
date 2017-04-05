@@ -10,4 +10,6 @@ type AwsInterface interface {
 	ReadAllInstances(templ *template.Template) (map[string]string, error)
 	// ListAllProfiles lists all available aws credential profiles
 	ListAllProfiles() ([]string, error)
+	// SetProfile sets the aws credential profile to use
+	SetProfile(string)
 }

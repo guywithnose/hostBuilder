@@ -1,9 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -12,22 +10,17 @@ import (
 )
 
 func TestCmdGroupSet(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	assert.Nil(t, set.Parse([]string{"foo", "baz"}))
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 
-	set.String("config", configFileName, "doc")
+	assert.Nil(t, set.Parse([]string{"foo", "baz"}))
 	c := cli.NewContext(nil, set, nil)
 	assert.Nil(t, CmdGroupSet(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
-	if modifiedConfigData.Hosts["goo"].Current != "baz" {
-		t.Fatal("goo was not set to baz")
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "baz", modifiedConfigData.Hosts["goo"].Current, "goo was not set to baz")
 }
 
 func TestCmdGroupSetUsage(t *testing.T) {
@@ -56,93 +49,60 @@ func TestCmdGroupSetBadConfigFile(t *testing.T) {
 }
 
 func TestCmdGroupSetBadGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"food", "baz"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	err := CmdGroupSet(c)
 	assert.EqualError(t, err, "Group food does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCmdGroupSetBadHostName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo", "barz"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	err := CmdGroupSet(c)
 	assert.EqualError(t, err, "Global IP barz does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCompleteGroupSetGroupName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupSet(c)
 
-	expectedOutput := "foo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "foo\n", writer.String())
 }
 
 func TestCompleteGroupSetGlobalIPs(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupSet(c)
 
-	expectedOutput := "baz:10.0.0.4\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "baz:10.0.0.4\n", writer.String())
 }
 
 func TestCompleteGroupSetComplete(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"foo", "baz"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupSet(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "", writer.String())
 }
 
 func TestCompleteGroupSetNoConfig(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteGroupSet(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "", writer.String())
 }

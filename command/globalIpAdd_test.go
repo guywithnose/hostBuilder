@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -15,26 +14,22 @@ import (
 func TestCmdGlobalIPAdd(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
+
 	_, err = runGlobalIPAddCommand(configFile.Name(), map[string]string{"def": "127.0.0.1"})
 	assert.Nil(t, err)
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFile.Name())
 	assert.Nil(t, err)
 
-	if len(modifiedConfigData.GlobalIPs) != 2 {
-		t.Fatalf("Global IPs length was %d, expected 2", len(modifiedConfigData.GlobalIPs))
-	}
-
-	expectedAbcIP := "10.0.0.2"
-	if modifiedConfigData.GlobalIPs["abc"] != expectedAbcIP {
-		t.Fatalf("\"abc\" Global IP was %s, expected %s", modifiedConfigData.GlobalIPs["abc"], expectedAbcIP)
-	}
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, 2, len(modifiedConfigData.GlobalIPs))
+	assert.Equal(t, "10.0.0.2", modifiedConfigData.GlobalIPs["abc"])
 }
 
 func TestCmdGlobalIPHostName(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 
 	set := flag.NewFlagSet("test", 0)
 	err = set.Parse([]string{"abc", "localhost4"})
@@ -45,23 +40,14 @@ func TestCmdGlobalIPHostName(t *testing.T) {
 
 	set.String("config", configFile.Name(), "doc")
 	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.ErrWriter = writer
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdGlobalIPAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFile.Name())
 	assert.Nil(t, err)
 
-	if len(modifiedConfigData.GlobalIPs) != 2 {
-		t.Fatalf("Global IPs length was %d, expected 2", len(modifiedConfigData.GlobalIPs))
-	}
-
-	expectedAbcIP := "127.0.0.1"
-	if modifiedConfigData.GlobalIPs["abc"] != expectedAbcIP {
-		t.Fatalf("\"abc\" Global IP was %s, expected %s", modifiedConfigData.GlobalIPs["abc"], expectedAbcIP)
-	}
-	assert.Nil(t, os.Remove(configFile.Name()))
+	assert.Equal(t, 2, len(modifiedConfigData.GlobalIPs))
+	assert.Equal(t, "127.0.0.1", modifiedConfigData.GlobalIPs["abc"])
 }
 
 func TestCmdGlobalIPAddUsage(t *testing.T) {
@@ -105,14 +91,15 @@ func TestCmdGlobalIPAddBadConfigFile(t *testing.T) {
 func TestCmdGlobalIPAddNoOverride(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 	_, err = runGlobalIPAddCommand(configFile.Name(), map[string]string{"abc": "127.0.0.1"})
 	assert.EqualError(t, err, "Global IP abc already exists")
-	assert.Nil(t, os.Remove(configFile.Name()))
 }
 
 func TestCmdGlobalIPAddOverride(t *testing.T) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
 	set, err := getValidAddArgSet()
 	set.Bool("force", true, "")
 	assert.Nil(t, err)
@@ -120,24 +107,34 @@ func TestCmdGlobalIPAddOverride(t *testing.T) {
 	configData := &config.HostsConfig{GlobalIPs: map[string]string{"abc": "127.0.0.1"}}
 	err = config.WriteConfig(configFile.Name(), configData)
 	set.String("config", configFile.Name(), "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.ErrWriter = writer
+	app, writer := appWithErrWriter()
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdGlobalIPAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFile.Name())
 	assert.Nil(t, err)
 
-	if len(modifiedConfigData.GlobalIPs) != 1 {
-		t.Fatalf("Global IPs length was %d, expected 1", len(modifiedConfigData.GlobalIPs))
-	}
+	assert.Equal(t, 1, len(modifiedConfigData.GlobalIPs))
+	assert.Equal(t, "Warning: Overwriting abc (127.0.0.1 => 10.0.0.2)", writer.String())
+}
 
-	expectedOutput := "Warning: Overwriting abc (127.0.0.1 => 10.0.0.2)"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
+func TestCompleteGlobalIPAdd(t *testing.T) {
+	app, writer := appWithWriter()
+	app.Commands = []cli.Command{
+		{
+			Name: "add",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name: "force",
+				},
+			},
+		},
 	}
-	assert.Nil(t, os.Remove(configFile.Name()))
+	set := flag.NewFlagSet("test", 0)
+	c := cli.NewContext(app, set, nil)
+	CompleteGlobalIPAdd(c)
+
+	assert.Equal(t, "--force\n", writer.String())
 }
 
 func getValidAddArgSet() (*flag.FlagSet, error) {
@@ -160,9 +157,7 @@ func runGlobalIPAddCommand(configFileName string, globalIPs map[string]string) (
 	}
 
 	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.ErrWriter = writer
+	app, writer := appWithErrWriter()
 	c := cli.NewContext(app, set, nil)
 	err = CmdGlobalIPAdd(c)
 	if err != nil {

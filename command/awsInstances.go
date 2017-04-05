@@ -12,12 +12,15 @@ import (
 )
 
 // CmdAwsInstances adds aws instance information to the configuration
-func CmdAwsInstances(c *cli.Context) error {
-	return CmdAwsInstancesHelper(c, awsUtil.NewAwsUtil(c.String("profile")))
+func CmdAwsInstances(util awsUtil.AwsInterface) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		return CmdAwsInstancesHelper(c, util)
+	}
 }
 
 // CmdAwsInstancesHelper uses the given awsUtil to add aws instance information to the configuration
 func CmdAwsInstancesHelper(c *cli.Context, util awsUtil.AwsInterface) error {
+	util.SetProfile(c.String("profile"))
 	if c.NArg() != 0 {
 		return cli.NewExitError("Usage: \"hostBuilder aws instances\"", 1)
 	}
@@ -45,8 +48,10 @@ func CmdAwsInstancesHelper(c *cli.Context, util awsUtil.AwsInterface) error {
 }
 
 // CompleteAwsInstances handles bash autocompletion for the 'aws instances' command
-func CompleteAwsInstances(c *cli.Context) {
-	CompleteAwsInstancesHelper(c, awsUtil.NewAwsUtil(""))
+func CompleteAwsInstances(util awsUtil.AwsInterface) func(c *cli.Context) {
+	return func(c *cli.Context) {
+		CompleteAwsInstancesHelper(c, util)
+	}
 }
 
 // CompleteAwsInstancesHelper handles bash autocompletion for the 'aws instances' command

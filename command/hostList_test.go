@@ -1,9 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,21 +9,19 @@ import (
 )
 
 func TestCmdHostList(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdHostList(c))
+	assert.Equal(t, "bar\nbaz.com\ngoo\n", writer.String())
+}
 
-	expectedOutput := "bar\nbaz.com\ngoo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+func TestCmdHostListNoConfig(t *testing.T) {
+	set := flag.NewFlagSet("test", 0)
+	c := cli.NewContext(nil, set, nil)
 
-	assert.Nil(t, os.Remove(configFileName))
+	assert.EqualError(t, CmdHostList(c), "You must specify a config file")
 }
 
 func TestCmdHostListUsage(t *testing.T) {
@@ -34,13 +30,6 @@ func TestCmdHostListUsage(t *testing.T) {
 	c := cli.NewContext(nil, set, nil)
 
 	assert.EqualError(t, CmdHostList(c), "Usage: \"hostBuilder host list\"")
-}
-
-func TestCmdHostListNoConfig(t *testing.T) {
-	set := flag.NewFlagSet("test", 0)
-	c := cli.NewContext(nil, set, nil)
-
-	assert.EqualError(t, CmdHostList(c), "You must specify a config file")
 }
 
 func TestCmdHostListBadConfigFile(t *testing.T) {

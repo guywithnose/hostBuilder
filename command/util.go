@@ -44,16 +44,6 @@ func sortGroupNames(configData *config.HostsConfig) []string {
 	return groupNames
 }
 
-func sortGroupHosts(configData *config.HostsConfig, groupName string) []string {
-	groupHosts := make([]string, 0, len(configData.Groups[groupName]))
-	for _, groupHost := range configData.Groups[groupName] {
-		groupHosts = append(groupHosts, groupHost)
-	}
-
-	sort.Strings(groupHosts)
-	return groupHosts
-}
-
 func groupContains(configData *config.HostsConfig, groupName, hostName string) bool {
 	for _, host := range configData.Groups[groupName] {
 		if host == hostName {

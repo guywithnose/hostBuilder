@@ -1,9 +1,7 @@
 package command
 
 import (
-	"bytes"
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -12,22 +10,17 @@ import (
 )
 
 func TestCmdHostSet(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"baz.com", "bazz"}))
 
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	assert.Nil(t, CmdHostSet(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
-	if modifiedConfigData.Hosts["baz.com"].Current != "bazz" {
-		t.Fatal("baz.com was not set to baz")
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "bazz", modifiedConfigData.Hosts["baz.com"].Current, "baz.com was not set to baz")
 }
 
 func TestCmdHostSetUsage(t *testing.T) {
@@ -56,112 +49,71 @@ func TestCmdHostSetBadConfigFile(t *testing.T) {
 }
 
 func TestCmdHostSetBadHostName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"food", "baz"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	err := CmdHostSet(c)
 	assert.EqualError(t, err, "HostName food does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCmdHostSetBadIPName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"baz.com", "bar"}))
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	err := CmdHostSet(c)
 	assert.EqualError(t, err, "IPName bar does not exist")
-	assert.Nil(t, os.Remove(configFileName))
 }
 
 func TestCompleteHostSetHostName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteHostSet(c)
 
-	expectedOutput := "bar\nbaz.com\ngoo\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "bar\nbaz.com\ngoo\n", writer.String())
 }
 
 func TestCompleteHostSetIPName(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"baz.com"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteHostSet(c)
 
-	expectedOutput := "bazz:10.0.0.7\nbaz:10.0.0.4\nignore:\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "bazz:10.0.0.7\nbaz:10.0.0.4\nignore:\n", writer.String())
 }
 
 func TestCompleteHostBadHostname(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"bar.com"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteHostSet(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "", writer.String())
 }
 
 func TestCompleteHostSetComplete(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
-	set := flag.NewFlagSet("test", 0)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 	assert.Nil(t, set.Parse([]string{"baz.com", "baz"}))
-	set.String("config", configFileName, "doc")
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteHostSet(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, "", writer.String())
 }
 
 func TestCompleteHostSetNoConfig(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
-	app := cli.NewApp()
-	writer := new(bytes.Buffer)
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	CompleteHostSet(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "", writer.String())
 }

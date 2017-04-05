@@ -30,7 +30,7 @@ func CmdCreateConfig(c *cli.Context) error {
 func CompleteCreateConfig(c *cli.Context) {
 	lastParam := os.Args[len(os.Args)-2]
 	if lastParam == "--hostsFile" {
-		fmt.Println("fileCompletion")
+		fmt.Fprintln(c.App.Writer, "fileCompletion")
 		return
 	}
 

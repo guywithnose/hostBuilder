@@ -1,22 +1,22 @@
 package command
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"io/ioutil"
+	"os"
 	"testing"
 	"text/template"
 
 	"github.com/guywithnose/hostBuilder/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/urfave/cli"
 )
 
-func setupBaseConfigFile(t *testing.T) string {
+func setupBaseConfigFile(t *testing.T) (string, *flag.FlagSet) {
 	configFile, err := ioutil.TempFile("/tmp", "config")
 	assert.Nil(t, err)
-
-	set := flag.NewFlagSet("test", 0)
-	assert.Nil(t, set.Parse([]string{"foo", "bart"}))
 
 	configData := &config.HostsConfig{
 		Groups: map[string][]string{"foo": []string{"baz.com", "goo"}},
@@ -30,7 +30,11 @@ func setupBaseConfigFile(t *testing.T) string {
 
 	err = config.WriteConfig(configFile.Name(), configData)
 	assert.Nil(t, err)
-	return configFile.Name()
+
+	set := flag.NewFlagSet("test", 0)
+	set.String("config", configFile.Name(), "doc")
+
+	return configFile.Name(), set
 }
 
 func setupInvalidConfigFile(t *testing.T) string {
@@ -88,4 +92,28 @@ func (util *awsTestUtil) ListAllProfiles() ([]string, error) {
 	}
 
 	return util.profiles, nil
+}
+
+// SetProfile sets the aws credential profile to use
+func (util *awsTestUtil) SetProfile(string) {
+}
+
+func appWithWriter() (*cli.App, *bytes.Buffer) {
+	app := cli.NewApp()
+	writer := new(bytes.Buffer)
+	app.Writer = writer
+
+	return app, writer
+}
+
+func appWithErrWriter() (*cli.App, *bytes.Buffer) {
+	app := cli.NewApp()
+	errWriter := new(bytes.Buffer)
+	app.ErrWriter = errWriter
+
+	return app, errWriter
+}
+
+func removeFile(t *testing.T, fileName string) {
+	assert.Nil(t, os.Remove(fileName))
 }

@@ -1,10 +1,8 @@
 package command
 
 import (
-	"bytes"
 	"flag"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -12,95 +10,77 @@ import (
 	"github.com/urfave/cli"
 )
 
-func TestCmdAwsLoadBalancerHelper(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
+func TestCmdAwsLoadBalancer(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 
-	set := flag.NewFlagSet("test", 0)
-
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
-	loadBalancers := map[string]string{"foo": "localhost4", "bar": "localhost6"}
 	util := new(awsTestUtil)
-	util.loadBalancers = loadBalancers
-	assert.Nil(t, CmdAwsLoadBalancerHelper(c, util))
+	util.loadBalancers = map[string]string{"foo": "localhost4", "bar": "localhost6"}
+	assert.Nil(t, CmdAwsLoadBalancer(util)(c))
 
 	configData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
 	expectedIPs := map[string]string{"baz": "10.0.0.4", "foo": "127.0.0.1", "bar": "::1"}
-	if !reflect.DeepEqual(configData.GlobalIPs, expectedIPs) {
-		t.Fatalf("Global IPs was \n%v\n, expected \n%v\n", configData.GlobalIPs, expectedIPs)
-	}
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.Equal(t, expectedIPs, configData.GlobalIPs)
 }
 
-func TestCmdAwsLoadBalancerHelperUnresolvedHostname(t *testing.T) {
-	configFileName := setupBaseConfigFile(t)
+func TestCmdAwsLoadBalancerUnresolvedHostname(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
 
-	set := flag.NewFlagSet("test", 0)
-
-	set.String("config", configFileName, "doc")
 	c := cli.NewContext(nil, set, nil)
 	loadBalancers := map[string]string{"foo": "notahost"}
 	util := new(awsTestUtil)
 	util.loadBalancers = loadBalancers
-	assert.EqualError(t, CmdAwsLoadBalancerHelper(c, util), "Unable to resolve notahost")
-
-	assert.Nil(t, os.Remove(configFileName))
+	assert.EqualError(t, CmdAwsLoadBalancer(util)(c), "Unable to resolve notahost")
 }
 
-func TestCmdAwsLoadBalancerHelperNoConfig(t *testing.T) {
+func TestCmdAwsLoadBalancerNoConfig(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
 	c := cli.NewContext(nil, set, nil)
 	loadBalancers := map[string]string{}
 	util := new(awsTestUtil)
 	util.loadBalancers = loadBalancers
-	assert.EqualError(t, CmdAwsLoadBalancerHelper(c, util), "You must specify a config file")
+	assert.EqualError(t, CmdAwsLoadBalancer(util)(c), "You must specify a config file")
 }
 
-func TestCmdAwsLoadBalancerHelperUsage(t *testing.T) {
+func TestCmdAwsLoadBalancerUsage(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
 	assert.Nil(t, set.Parse([]string{"foo"}))
 	c := cli.NewContext(nil, set, nil)
 	loadBalancers := map[string]string{}
 	util := new(awsTestUtil)
 	util.loadBalancers = loadBalancers
-	assert.EqualError(t, CmdAwsLoadBalancerHelper(c, util), "Usage: \"hostBuilder aws loadBalancers\"")
+	assert.EqualError(t, CmdAwsLoadBalancer(util)(c), "Usage: \"hostBuilder aws loadBalancers\"")
 }
 
-func TestCmdAwsLoadBalancerHelperAwsError(t *testing.T) {
+func TestCmdAwsLoadBalancerAwsError(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
 	c := cli.NewContext(nil, set, nil)
 	util := new(awsTestUtil)
 	util.throwError = true
-	assert.EqualError(t, CmdAwsLoadBalancerHelper(c, util), "error")
+	assert.EqualError(t, CmdAwsLoadBalancer(util)(c), "error")
 }
 
-func TestCompleteAwsLoadBalancersHelper(t *testing.T) {
+func TestCompleteAwsLoadBalancers(t *testing.T) {
 	os.Args = []string{"aws", "loadBalancers", "--profile", "--bash-completion"}
 	set := flag.NewFlagSet("test", 0)
-	writer := new(bytes.Buffer)
-	app := cli.NewApp()
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	app.Commands = []cli.Command{{Name: "loadBalancers"}}
 	util := new(awsTestUtil)
 	util.profiles = []string{"profile1", "profile2"}
-	CompleteAwsLoadBalancerHelper(c, util)
+	CompleteAwsLoadBalancer(util)(c)
 
-	expectedOutput := "profile1\nprofile2\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "profile1\nprofile2\n", writer.String())
 }
 
-func TestCompleteAwsLoadBalancersHelperNoProfileParam(t *testing.T) {
+func TestCompleteAwsLoadBalancersNoProfileParam(t *testing.T) {
 	os.Args = []string{"aws", "loadBalancers", "--bash-completion"}
 	set := flag.NewFlagSet("test", 0)
-	writer := new(bytes.Buffer)
-	app := cli.NewApp()
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	app.Commands = []cli.Command{
 		{
@@ -114,28 +94,21 @@ func TestCompleteAwsLoadBalancersHelperNoProfileParam(t *testing.T) {
 	}
 	util := new(awsTestUtil)
 	util.profiles = []string{"profile1", "profile2"}
-	CompleteAwsLoadBalancerHelper(c, util)
+	CompleteAwsLoadBalancer(util)(c)
 
-	expectedOutput := "--profile\n"
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "--profile\n", writer.String())
 }
 
-func TestCompleteAwsLoadBalancersHelperAwsError(t *testing.T) {
+func TestCompleteAwsLoadBalancersAwsError(t *testing.T) {
+	os.Args = []string{"aws", "loadBalancers", "--profile", "--bash-completion"}
 	set := flag.NewFlagSet("test", 0)
-	writer := new(bytes.Buffer)
-	app := cli.NewApp()
-	app.Writer = writer
+	app, writer := appWithWriter()
 	c := cli.NewContext(app, set, nil)
 	app.Commands = []cli.Command{{Name: "loadBalancers"}}
 	util := new(awsTestUtil)
 	util.profiles = []string{"profile1", "profile2"}
 	util.throwError = true
-	CompleteAwsLoadBalancerHelper(c, util)
+	CompleteAwsLoadBalancer(util)(c)
 
-	expectedOutput := ""
-	if writer.String() != expectedOutput {
-		t.Fatalf("Output was %s, expected %s", writer.String(), expectedOutput)
-	}
+	assert.Equal(t, "", writer.String())
 }
