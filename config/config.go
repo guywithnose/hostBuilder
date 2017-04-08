@@ -63,13 +63,8 @@ func LoadConfigFromFile(fileName string) (*HostsConfig, error) {
 
 // WriteConfig saves a HostsConfig to a file
 func WriteConfig(outputFile string, configData *HostsConfig) error {
-	formattedConfig, err := json.MarshalIndent(configData, "", "  ")
-	if err != nil {
-		// This should never happen
-		panic(err)
-	}
-
-	err = ioutil.WriteFile(outputFile, formattedConfig, 0644)
+	formattedConfig, _ := json.MarshalIndent(configData, "", "  ")
+	err := ioutil.WriteFile(outputFile, formattedConfig, 0644)
 	if err != nil {
 		return err
 	}
