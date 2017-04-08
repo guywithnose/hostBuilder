@@ -21,7 +21,7 @@ func TestCmdHostRemove(t *testing.T) {
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
 	assert.Nil(t, err)
 
-	expectedHost := config.Host{Current: "ignore", Options: map[string]string{}}
+	expectedHost := config.Host{Current: hostIgnore, Options: map[string]string{}}
 	assert.Equal(t, expectedHost, modifiedConfigData.Hosts["goo"])
 }
 

@@ -108,39 +108,39 @@ func TestLoadEmptyHostConfigAndWrite(t *testing.T) {
 }
 func TestBuildConfigFromHosts(t *testing.T) {
 	hosts := map[string][]string{
-		"bing":                    []string{"10.0.0.2"},
-		"noips":                   []string{},
-		"foo.bar":                 []string{"10.0.0.2", "10.0.0.3", "10.0.0.4"},
-		"foo":                     []string{"127.0.1.1"},
-		"ip6-allnodes":            []string{"ff02::1"},
-		"ip6-allrouters":          []string{"ff02::2"},
-		"ip6-localhost":           []string{"::1"},
-		"ip6-localnet":            []string{"fe00::0"},
-		"ip6-loopback":            []string{"::1"},
-		"ip6-mcastprefix":         []string{"ff00::0"},
-		"localhost4.localdomain4": []string{"127.0.0.1"},
-		"localhost4":              []string{"127.0.0.1"},
-		"localhost6.localdomain6": []string{"::1"},
-		"localhost6":              []string{"::1"},
-		"localhost.localdomain":   []string{"127.0.0.1", "::1"},
-		"localhost":               []string{"127.0.0.1", "::1"},
+		"bing":                    {"10.0.0.2"},
+		"noips":                   {},
+		"foo.bar":                 {"10.0.0.2", "10.0.0.3", "10.0.0.4"},
+		"foo":                     {"127.0.1.1"},
+		"ip6-allnodes":            {"ff02::1"},
+		"ip6-allrouters":          {"ff02::2"},
+		"ip6-localhost":           {"::1"},
+		"ip6-localnet":            {"fe00::0"},
+		"ip6-loopback":            {"::1"},
+		"ip6-mcastprefix":         {"ff00::0"},
+		"localhost4.localdomain4": {"127.0.0.1"},
+		"localhost4":              {"127.0.0.1"},
+		"localhost6.localdomain6": {"::1"},
+		"localhost6":              {"::1"},
+		"localhost.localdomain":   {"127.0.0.1", "::1"},
+		"localhost":               {"127.0.0.1", "::1"},
 	}
 
 	configData := BuildConfigFromHosts(hosts)
 
 	expectedHosts := map[string]Host{
-		"bing":                    Host{Current: "default", Options: map[string]string{"default": "10.0.0.2"}},
-		"foo.bar":                 Host{Current: "default", Options: map[string]string{"default": "10.0.0.2", "default2": "10.0.0.3", "default3": "10.0.0.4"}},
-		"ip6-allnodes":            Host{Current: "default", Options: map[string]string{"default": "ff02::1"}},
-		"ip6-allrouters":          Host{Current: "default", Options: map[string]string{"default": "ff02::2"}},
-		"ip6-localhost":           Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"ip6-localnet":            Host{Current: "default", Options: map[string]string{"default": "fe00::0"}},
-		"ip6-loopback":            Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"ip6-mcastprefix":         Host{Current: "default", Options: map[string]string{"default": "ff00::0"}},
-		"localhost":               Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost6":              Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost6.localdomain6": Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost.localdomain":   Host{Current: "default", Options: map[string]string{"default": "::1"}},
+		"bing":                    {Current: "default", Options: map[string]string{"default": "10.0.0.2"}},
+		"foo.bar":                 {Current: "default", Options: map[string]string{"default": "10.0.0.2", "default2": "10.0.0.3", "default3": "10.0.0.4"}},
+		"ip6-allnodes":            {Current: "default", Options: map[string]string{"default": "ff02::1"}},
+		"ip6-allrouters":          {Current: "default", Options: map[string]string{"default": "ff02::2"}},
+		"ip6-localhost":           {Current: "default", Options: map[string]string{"default": "::1"}},
+		"ip6-localnet":            {Current: "default", Options: map[string]string{"default": "fe00::0"}},
+		"ip6-loopback":            {Current: "default", Options: map[string]string{"default": "::1"}},
+		"ip6-mcastprefix":         {Current: "default", Options: map[string]string{"default": "ff00::0"}},
+		"localhost":               {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost6":              {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost6.localdomain6": {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost.localdomain":   {Current: "default", Options: map[string]string{"default": "::1"}},
 	}
 	if !reflect.DeepEqual(configData.Hosts, expectedHosts) {
 		t.Fatalf("File was \n%v\n, expected \n%v\n", configData.Hosts, expectedHosts)
@@ -155,10 +155,10 @@ func TestBuildConfigFromHosts(t *testing.T) {
 func getTestingConfig() *HostsConfig {
 	return &HostsConfig{
 		LocalHostnames: []string{"foo", "bar"},
-		Hosts:          map[string]Host{"foo.bar": Host{Current: "test", Options: map[string]string{"test": "10.0.0.1"}}},
+		Hosts:          map[string]Host{"foo.bar": {Current: "test", Options: map[string]string{"test": "10.0.0.1"}}},
 		IPv6Defaults:   true,
 		GlobalIPs:      map[string]string{"foo": "bar"},
-		Groups:         map[string][]string{"fooGroup": []string{"foo.bar"}},
+		Groups:         map[string][]string{"fooGroup": {"foo.bar"}},
 	}
 }
 

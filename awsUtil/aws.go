@@ -78,6 +78,10 @@ func (util *AwsUtil) ListAllProfiles() ([]string, error) {
 	}
 
 	config, err := ini.Load(scp.Filename)
+	if err != nil {
+		return nil, err
+	}
+
 	return config.SectionStrings(), nil
 }
 

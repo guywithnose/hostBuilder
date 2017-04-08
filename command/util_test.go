@@ -19,11 +19,11 @@ func setupBaseConfigFile(t *testing.T) (string, *flag.FlagSet) {
 	assert.Nil(t, err)
 
 	configData := &config.HostsConfig{
-		Groups: map[string][]string{"foo": []string{"baz.com", "goo"}},
+		Groups: map[string][]string{"foo": {"baz.com", "goo"}},
 		Hosts: map[string]config.Host{
-			"bar":     config.Host{Current: "ignore"},
-			"baz.com": config.Host{Current: "baz", Options: map[string]string{"bazz": "10.0.0.7"}},
-			"goo":     config.Host{Current: "foop", Options: map[string]string{"foop": "10.0.0.8"}},
+			"bar":     {Current: hostIgnore},
+			"baz.com": {Current: "baz", Options: map[string]string{"bazz": "10.0.0.7"}},
+			"goo":     {Current: "foop", Options: map[string]string{"foop": "10.0.0.8"}},
 		},
 		GlobalIPs: map[string]string{"baz": "10.0.0.4"},
 	}
@@ -47,10 +47,10 @@ func setupInvalidConfigFile(t *testing.T) string {
 	configData := &config.HostsConfig{
 		Groups: nil,
 		Hosts: map[string]config.Host{
-			"bar":     config.Host{Current: "ignore"},
-			"baz.com": config.Host{Current: "baz", Options: map[string]string{"bazz": "10.0.0.7"}},
-			"goo":     config.Host{Current: "foop", Options: map[string]string{"foop": "10.0.0.8"}},
-			"unknown": config.Host{Current: "unknown"},
+			"bar":     {Current: hostIgnore},
+			"baz.com": {Current: "baz", Options: map[string]string{"bazz": "10.0.0.7"}},
+			"goo":     {Current: "foop", Options: map[string]string{"foop": "10.0.0.8"}},
+			"unknown": {Current: "unknown"},
 		},
 		GlobalIPs: map[string]string{"baz": "10.0.0.4"},
 	}

@@ -64,12 +64,7 @@ func LoadConfigFromFile(fileName string) (*HostsConfig, error) {
 // WriteConfig saves a HostsConfig to a file
 func WriteConfig(outputFile string, configData *HostsConfig) error {
 	formattedConfig, _ := json.MarshalIndent(configData, "", "  ")
-	err := ioutil.WriteFile(outputFile, formattedConfig, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(outputFile, formattedConfig, 0644)
 }
 
 // BuildConfigFromHosts builds a config from a map of hostnames to ips

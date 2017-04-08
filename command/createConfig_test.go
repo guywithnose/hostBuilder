@@ -45,18 +45,18 @@ ff02::2 ip6-allrouters
 	assert.Nil(t, err)
 
 	expectedHosts := map[string]config.Host{
-		"bing":                    config.Host{Current: "default", Options: map[string]string{"default": "10.0.0.2"}},
-		"foo.bar":                 config.Host{Current: "default", Options: map[string]string{"default": "10.0.0.2", "default2": "10.0.0.3"}},
-		"ip6-allnodes":            config.Host{Current: "default", Options: map[string]string{"default": "ff02::1"}},
-		"ip6-allrouters":          config.Host{Current: "default", Options: map[string]string{"default": "ff02::2"}},
-		"ip6-localhost":           config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"ip6-localnet":            config.Host{Current: "default", Options: map[string]string{"default": "fe00::0"}},
-		"ip6-loopback":            config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"ip6-mcastprefix":         config.Host{Current: "default", Options: map[string]string{"default": "ff00::0"}},
-		"localhost":               config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost6":              config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost6.localdomain6": config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
-		"localhost.localdomain":   config.Host{Current: "default", Options: map[string]string{"default": "::1"}},
+		"bing":                    {Current: "default", Options: map[string]string{"default": "10.0.0.2"}},
+		"foo.bar":                 {Current: "default", Options: map[string]string{"default": "10.0.0.2", "default2": "10.0.0.3"}},
+		"ip6-allnodes":            {Current: "default", Options: map[string]string{"default": "ff02::1"}},
+		"ip6-allrouters":          {Current: "default", Options: map[string]string{"default": "ff02::2"}},
+		"ip6-localhost":           {Current: "default", Options: map[string]string{"default": "::1"}},
+		"ip6-localnet":            {Current: "default", Options: map[string]string{"default": "fe00::0"}},
+		"ip6-loopback":            {Current: "default", Options: map[string]string{"default": "::1"}},
+		"ip6-mcastprefix":         {Current: "default", Options: map[string]string{"default": "ff00::0"}},
+		"localhost":               {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost6":              {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost6.localdomain6": {Current: "default", Options: map[string]string{"default": "::1"}},
+		"localhost.localdomain":   {Current: "default", Options: map[string]string{"default": "::1"}},
 	}
 
 	assert.Equal(t, expectedHosts, configData.Hosts)

@@ -19,7 +19,7 @@ func TestCmdBuild(t *testing.T) {
 	defer removeFile(t, configFile.Name())
 	defer removeFile(t, outputFile.Name())
 	set := flag.NewFlagSet("test", 0)
-	configData := &config.HostsConfig{Hosts: map[string]config.Host{"foo.bar": config.Host{Current: "test", Options: map[string]string{"test": "10.0.0.1"}}}}
+	configData := &config.HostsConfig{Hosts: map[string]config.Host{"foo.bar": {Current: "test", Options: map[string]string{"test": "10.0.0.1"}}}}
 	err = config.WriteConfig(configFile.Name(), configData)
 	assert.Nil(t, err)
 
@@ -66,7 +66,7 @@ func TestCmdBuildNoOutput(t *testing.T) {
 	assert.Nil(t, err)
 	defer removeFile(t, configFile.Name())
 	set := flag.NewFlagSet("test", 0)
-	configData := &config.HostsConfig{Hosts: map[string]config.Host{"foo.bar": config.Host{Current: "test", Options: map[string]string{"test": "10.0.0.1"}}}}
+	configData := &config.HostsConfig{Hosts: map[string]config.Host{"foo.bar": {Current: "test", Options: map[string]string{"test": "10.0.0.1"}}}}
 	err = config.WriteConfig(configFile.Name(), configData)
 	assert.Nil(t, err)
 

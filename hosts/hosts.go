@@ -39,7 +39,7 @@ func OutputHostLines(outputFile string, configData *config.HostsConfig, oneLineP
 
 func buildHostLines(configData *config.HostsConfig) map[string][]string {
 	hostLines := map[string][]string{
-		"127.0.0.1": []string{"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"},
+		"127.0.0.1": {"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"},
 		"127.0.1.1": configData.LocalHostnames,
 	}
 

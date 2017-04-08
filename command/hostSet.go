@@ -26,7 +26,7 @@ func CmdHostSet(c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("HostName %s does not exist", hostName), 1)
 	}
 
-	if _, exists := configData.Hosts[hostName].Options[IPName]; !exists && IPName != "ignore" {
+	if _, exists := configData.Hosts[hostName].Options[IPName]; !exists && IPName != hostIgnore {
 		if _, exists := configData.GlobalIPs[IPName]; !exists {
 			return cli.NewExitError(fmt.Sprintf("IPName %s does not exist", IPName), 1)
 		}

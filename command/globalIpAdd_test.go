@@ -106,6 +106,7 @@ func TestCmdGlobalIPAddOverride(t *testing.T) {
 
 	configData := &config.HostsConfig{GlobalIPs: map[string]string{"abc": "127.0.0.1"}}
 	err = config.WriteConfig(configFile.Name(), configData)
+	assert.Nil(t, err)
 	set.String("config", configFile.Name(), "doc")
 	app, writer := appWithErrWriter()
 	c := cli.NewContext(app, set, nil)

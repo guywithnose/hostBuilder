@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+const hostIgnore = "ignore"
+
 func loadConfig(c *cli.Context) (*config.HostsConfig, error) {
 	configFile := c.GlobalString("config")
 	if configFile == "" {

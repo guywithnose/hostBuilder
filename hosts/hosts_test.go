@@ -11,13 +11,18 @@ import (
 
 func TestOutputHostLinesMultipleLinesPerIP(t *testing.T) {
 	hostLines := runOutputHosts(t, false)
-	expectedLines := "10.0.0.2 bing\n10.0.0.2 foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost\n127.0.0.1 localhost.localdomain\n127.0.0.1 localhost4\n127.0.0.1 localhost4.localdomain4\n127.0.1.1 bar\n127.0.1.1 foo\n::1 ip6-localhost\n::1 ip6-loopback\n::1 localhost\n::1 localhost.localdomain\n::1 localhost6\n::1 localhost6.localdomain6\nfe00::0 ip6-localnet\nff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\nff02::2 ip6-allrouters\n"
+	expectedLines := "10.0.0.2 bing\n10.0.0.2 foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost\n127.0.0.1 localhost.localdomain\n127.0.0.1 localhost4\n" +
+		"127.0.0.1 localhost4.localdomain4\n127.0.1.1 bar\n127.0.1.1 foo\n::1 ip6-localhost\n::1 ip6-loopback\n::1 localhost\n" +
+		"::1 localhost.localdomain\n::1 localhost6\n::1 localhost6.localdomain6\nfe00::0 ip6-localnet\nff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\n" +
+		"ff02::2 ip6-allrouters\n"
 	assert.Equal(t, expectedLines, hostLines)
 }
 
 func TestOutputHostLinesOneLinePerIP(t *testing.T) {
 	hostLines := runOutputHosts(t, true)
-	expectedLines := "10.0.0.2 bing foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4\n127.0.1.1 bar foo\n::1 ip6-localhost ip6-loopback localhost localhost.localdomain localhost6 localhost6.localdomain6\nfe00::0 ip6-localnet\nff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\nff02::2 ip6-allrouters\n"
+	expectedLines := "10.0.0.2 bing foo.bar\n123.12.34.56 bam\n127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4\n" +
+		"127.0.1.1 bar foo\n::1 ip6-localhost ip6-loopback localhost localhost.localdomain localhost6 localhost6.localdomain6\nfe00::0 ip6-localnet\n" +
+		"ff00::0 ip6-mcastprefix\nff02::1 ip6-allnodes\nff02::2 ip6-allrouters\n"
 	assert.Equal(t, expectedLines, hostLines)
 }
 
@@ -31,7 +36,7 @@ func TestReadHostsFile(t *testing.T) {
  # 10.0.0.4 foo.bar
 123.12.34.56 bam
 10.0.0.256 notip
-127.0.1.1 bar 
+127.0.1.1 bar
 127.0.1.1  foo
 	fe00::0	ip6-localnet
 ff00::0 ip6-mcastprefix
@@ -44,23 +49,23 @@ ff02::2 ip6-allrouters
 	assert.Nil(t, err)
 
 	expectedHosts := map[string][]string{
-		"bam":                     []string{"123.12.34.56"},
-		"bar":                     []string{"127.0.1.1"},
-		"bing":                    []string{"10.0.0.2"},
-		"foo.bar":                 []string{"10.0.0.2", "10.0.0.3", "10.0.0.4"},
-		"foo":                     []string{"127.0.1.1"},
-		"ip6-allnodes":            []string{"ff02::1"},
-		"ip6-allrouters":          []string{"ff02::2"},
-		"ip6-localhost":           []string{"::1"},
-		"ip6-localnet":            []string{"fe00::0"},
-		"ip6-loopback":            []string{"::1"},
-		"ip6-mcastprefix":         []string{"ff00::0"},
-		"localhost4.localdomain4": []string{"127.0.0.1"},
-		"localhost4":              []string{"127.0.0.1"},
-		"localhost6.localdomain6": []string{"::1"},
-		"localhost6":              []string{"::1"},
-		"localhost.localdomain":   []string{"127.0.0.1", "::1"},
-		"localhost":               []string{"127.0.0.1", "::1"},
+		"bam":                     {"123.12.34.56"},
+		"bar":                     {"127.0.1.1"},
+		"bing":                    {"10.0.0.2"},
+		"foo.bar":                 {"10.0.0.2", "10.0.0.3", "10.0.0.4"},
+		"foo":                     {"127.0.1.1"},
+		"ip6-allnodes":            {"ff02::1"},
+		"ip6-allrouters":          {"ff02::2"},
+		"ip6-localhost":           {"::1"},
+		"ip6-localnet":            {"fe00::0"},
+		"ip6-loopback":            {"::1"},
+		"ip6-mcastprefix":         {"ff00::0"},
+		"localhost4.localdomain4": {"127.0.0.1"},
+		"localhost4":              {"127.0.0.1"},
+		"localhost6.localdomain6": {"::1"},
+		"localhost6":              {"::1"},
+		"localhost.localdomain":   {"127.0.0.1", "::1"},
+		"localhost":               {"127.0.0.1", "::1"},
 	}
 
 	hosts, err := ReadHostsFile(outputFile.Name())
@@ -77,9 +82,16 @@ func TestReadHostsFileInvalidHostsFile(t *testing.T) {
 func getTestingConfig() *config.HostsConfig {
 	return &config.HostsConfig{
 		LocalHostnames: []string{"foo", "bar"},
-		Hosts:          map[string]config.Host{"foo.bar": config.Host{Current: "test", Options: map[string]string{"test": "10.0.0.2"}}, "bing": config.Host{Current: "goo"}, "bam": config.Host{Current: "boo"}},
-		IPv6Defaults:   true,
-		GlobalIPs:      map[string]string{"local": "127.0.0.1", "goo": "10.0.0.2", "boo": "123.12.34.56"},
+		Hosts: map[string]config.Host{
+			"foo.bar": {
+				Current: "test",
+				Options: map[string]string{"test": "10.0.0.2"},
+			},
+			"bing": {Current: "goo"},
+			"bam":  {Current: "boo"},
+		},
+		IPv6Defaults: true,
+		GlobalIPs:    map[string]string{"local": "127.0.0.1", "goo": "10.0.0.2", "boo": "123.12.34.56"},
 	}
 }
 

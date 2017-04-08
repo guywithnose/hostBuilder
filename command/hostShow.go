@@ -47,7 +47,7 @@ func CmdHostShow(c *cli.Context) error {
 			fmt.Fprintf(c.App.Writer, "Current: Global IP %s => %s\n", configData.Hosts[hostName].Current, IP)
 		} else {
 			fmt.Fprintf(c.App.Writer, "Current: %s", configData.Hosts[hostName].Current)
-			if configData.Hosts[hostName].Current != "ignore" {
+			if configData.Hosts[hostName].Current != hostIgnore {
 				fmt.Fprint(c.App.Writer, " (Warning: no associated IP please validate your config)")
 			}
 

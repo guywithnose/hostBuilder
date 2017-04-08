@@ -33,7 +33,7 @@ func CmdHostRemove(c *cli.Context) error {
 	host := configData.Hosts[hostName]
 	delete(host.Options, IPName)
 	if len(host.Options) == 0 {
-		host.Current = "ignore"
+		host.Current = hostIgnore
 	}
 
 	configData.Hosts[hostName] = host
