@@ -1,8 +1,8 @@
 hash: 3ef5915c81c179d9023094fc485d798361e9b47ce57aaf5e10fa1f3d59d96d88
-updated: 2017-01-18T23:53:51.168264011-05:00
+updated: 2017-04-10T23:45:53.362683426-04:00
 imports:
 - name: github.com/aws/aws-sdk-go
-  version: f25c58028ccaa4be2726c172d970ba1cc0f26c99
+  version: 200fde3f632bb9f036ec0b8cb29fbc8588155ea5
   subpackages:
   - aws
   - aws/awserr
@@ -26,23 +26,22 @@ imports:
   - private/protocol/query/queryutil
   - private/protocol/rest
   - private/protocol/xml/xmlutil
-  - private/waiter
   - service/ec2
   - service/elb
   - service/sts
 - name: github.com/go-ini/ini
-  version: 766e555c68dc8bda90d197ee8946c37519c19409
+  version: e7fea39b01aea8d5671f6858f0532f56e8bff3a5
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
