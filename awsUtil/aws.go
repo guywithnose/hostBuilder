@@ -125,28 +125,41 @@ func (util *AwsUtil) readInstances(region string, templ *template.Template) (map
 		MaxResults: aws.Int64(10),
 	}
 	resp, err := svc.DescribeInstances(params)
-
 	if err != nil {
 		return nil, err
 	}
 
+	instanceIPs := parseReservations(resp.Reservations, templ)
+	return instanceIPs, nil
+}
+
+func parseReservations(reservations []*ec2.Reservation, templ *template.Template) map[string]string {
 	instanceIPs := make(map[string]string)
-	for _, reservation := range resp.Reservations {
+	for _, reservation := range reservations {
 		instances := reservation.Instances
 		for _, instance := range instances {
-			if instance.PublicIpAddress != nil {
-				var buffer bytes.Buffer
-				err = templ.Execute(&buffer, instance)
-				if err != nil {
-					return nil, err
-				}
-
-				instanceIPs[buffer.String()] = *instance.PublicIpAddress
+			name, ip, err := parseInstance(instance, templ)
+			if err == nil {
+				instanceIPs[name] = ip
 			}
 		}
 	}
 
-	return instanceIPs, nil
+	return instanceIPs
+}
+
+func parseInstance(instance *ec2.Instance, templ *template.Template) (string, string, error) {
+	if instance.PublicIpAddress == nil {
+		return "", "", errors.New("instance has no ip address")
+	}
+
+	var buffer bytes.Buffer
+	err := templ.Execute(&buffer, instance)
+	if err != nil {
+		return "", "", err
+	}
+
+	return buffer.String(), *instance.PublicIpAddress, nil
 }
 
 func (util *AwsUtil) getRegions() ([]string, error) {

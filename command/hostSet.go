@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -22,6 +23,19 @@ func CmdHostSet(c *cli.Context) error {
 		return err
 	}
 
+	err = validateParameters(configData, hostName, IPName)
+	if err != nil {
+		return err
+	}
+
+	host := configData.Hosts[hostName]
+	host.Current = IPName
+	configData.Hosts[hostName] = host
+
+	return config.WriteConfig(c.GlobalString("config"), configData)
+}
+
+func validateParameters(configData *config.HostsConfig, hostName, IPName string) error {
 	if _, exists := configData.Hosts[hostName]; !exists {
 		return cli.NewExitError(fmt.Sprintf("HostName %s does not exist", hostName), 1)
 	}
@@ -32,11 +46,7 @@ func CmdHostSet(c *cli.Context) error {
 		}
 	}
 
-	host := configData.Hosts[hostName]
-	host.Current = IPName
-	configData.Hosts[hostName] = host
-
-	return config.WriteConfig(c.GlobalString("config"), configData)
+	return nil
 }
 
 // CompleteHostSet handles bash autocompletion for the 'host set' command
@@ -50,17 +60,21 @@ func CompleteHostSet(c *cli.Context) {
 		fmt.Fprintln(c.App.Writer, strings.Join(sortHostNames(configData), "\n"))
 	} else if c.NArg() == 1 {
 		hostName := c.Args().Get(0)
-		if _, exists := configData.Hosts[hostName]; !exists {
-			return
-		}
-
-		for _, option := range sortOptions(configData, hostName) {
-			fmt.Fprintf(c.App.Writer, "%s:%s\n", option, configData.Hosts[hostName].Options[option])
-		}
-		for _, globalIPName := range sortGlobalIPNames(configData) {
-			fmt.Fprintf(c.App.Writer, "%s:%s\n", globalIPName, configData.GlobalIPs[globalIPName])
-		}
-
-		fmt.Fprintln(c.App.Writer, "ignore:")
+		printIPs(configData, hostName, c.App.Writer)
 	}
+}
+
+func printIPs(configData *config.HostsConfig, hostName string, writer io.Writer) {
+	if _, exists := configData.Hosts[hostName]; !exists {
+		return
+	}
+
+	for _, option := range sortOptions(configData, hostName) {
+		fmt.Fprintf(writer, "%s:%s\n", option, configData.Hosts[hostName].Options[option])
+	}
+	for _, globalIPName := range sortGlobalIPNames(configData) {
+		fmt.Fprintf(writer, "%s:%s\n", globalIPName, configData.GlobalIPs[globalIPName])
+	}
+
+	fmt.Fprintln(writer, "ignore:")
 }

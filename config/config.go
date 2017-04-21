@@ -35,27 +35,11 @@ func LoadConfigFromFile(fileName string) (*HostsConfig, error) {
 		return nil, err
 	}
 
-	if configData.LocalHostnames == nil {
-		configData.LocalHostnames = []string{}
-	}
-
-	if configData.Hosts == nil {
-		configData.Hosts = map[string]Host{}
-	}
-
 	for index, host := range configData.Hosts {
 		if host.Options == nil {
 			host.Options = map[string]string{}
 			configData.Hosts[index] = host
 		}
-	}
-
-	if configData.GlobalIPs == nil {
-		configData.GlobalIPs = map[string]string{}
-	}
-
-	if configData.Groups == nil {
-		configData.Groups = map[string][]string{}
 	}
 
 	return configData, nil
@@ -78,23 +62,31 @@ func BuildConfigFromHosts(hosts map[string][]string) *HostsConfig {
 	}
 
 	for hostname, ips := range hosts {
-		if len(ips) == 0 {
-			continue
-		}
-
-		for _, ip := range ips {
-			if ip == "127.0.1.1" {
-				configData.LocalHostnames = append(configData.LocalHostnames, hostname)
-			} else if ip != "127.0.0.1" || !strings.Contains(hostname, "localhost") {
-				if _, exists := configData.Hosts[hostname]; exists {
-					IPName := fmt.Sprintf("default%d", len(configData.Hosts[hostname].Options)+1)
-					configData.Hosts[hostname].Options[IPName] = ip
-				} else {
-					configData.Hosts[hostname] = Host{Current: "default", Options: map[string]string{"default": ip}}
-				}
-			}
-		}
+		parseHost(configData, hostname, ips)
 	}
 
 	return configData
+}
+
+func parseHost(configData *HostsConfig, hostname string, ips []string) {
+	if len(ips) == 0 {
+		return
+	}
+
+	for _, ip := range ips {
+		parseIP(configData, hostname, ip)
+	}
+}
+
+func parseIP(configData *HostsConfig, hostname string, ip string) {
+	if ip == "127.0.1.1" {
+		configData.LocalHostnames = append(configData.LocalHostnames, hostname)
+	} else if ip != "127.0.0.1" || !strings.Contains(hostname, "localhost") {
+		if _, exists := configData.Hosts[hostname]; exists {
+			IPName := fmt.Sprintf("default%d", len(configData.Hosts[hostname].Options)+1)
+			configData.Hosts[hostname].Options[IPName] = ip
+		} else {
+			configData.Hosts[hostname] = Host{Current: "default", Options: map[string]string{"default": ip}}
+		}
+	}
 }

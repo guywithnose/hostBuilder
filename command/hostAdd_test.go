@@ -16,7 +16,8 @@ func TestCmdHostAdd(t *testing.T) {
 	err := set.Parse([]string{"bar", hooIP, "hoo"})
 	assert.Nil(t, err)
 
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdHostAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
@@ -31,7 +32,8 @@ func TestCmdHostAddHostname(t *testing.T) {
 	err := set.Parse([]string{"bar", "localhost4", "hoo"})
 	assert.Nil(t, err)
 
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdHostAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
@@ -113,7 +115,8 @@ func TestCmdHostAddNewHostName(t *testing.T) {
 	defer removeFile(t, configFileName)
 	hooIP := "10.0.0.2"
 	assert.Nil(t, set.Parse([]string{"barz", hooIP, "hoo"}))
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdHostAdd(c))
 
 	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)

@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -27,12 +28,21 @@ func CmdHostAdd(c *cli.Context) error {
 		return err
 	}
 
+	err = addHost(configData, hostName, address, IPName, c.Bool("force"), c.App.ErrWriter)
+	if err != nil {
+		return err
+	}
+
+	return config.WriteConfig(c.GlobalString("config"), configData)
+}
+
+func addHost(configData *config.HostsConfig, hostName, address, IPName string, force bool, errWriter io.Writer) error {
 	if _, exists := configData.Hosts[hostName]; !exists {
 		configData.Hosts[hostName] = config.Host{Current: IPName, Options: map[string]string{IPName: address}}
 	} else {
 		if current, exists := configData.Hosts[hostName].Options[IPName]; exists {
-			if c.Bool("force") {
-				fmt.Fprintf(c.App.ErrWriter, "Warning: Overwriting %s (%s => %s)", IPName, current, address)
+			if force {
+				fmt.Fprintf(errWriter, "Warning: Overwriting %s (%s => %s)", IPName, current, address)
 			} else {
 				return cli.NewExitError(fmt.Sprintf("IP %s already exists", hostName), 1)
 			}
@@ -41,7 +51,7 @@ func CmdHostAdd(c *cli.Context) error {
 		configData.Hosts[hostName].Options[IPName] = address
 	}
 
-	return config.WriteConfig(c.GlobalString("config"), configData)
+	return nil
 }
 
 // CompleteHostAdd handles bash autocompletion for the 'host add' command
@@ -62,6 +72,10 @@ func CompleteHostAdd(c *cli.Context) {
 		fmt.Fprintln(c.App.Writer, strings.Join(sortAllOptions(configData), "\n"))
 	}
 
+	flagCompletion(c)
+}
+
+func flagCompletion(c *cli.Context) {
 	for _, flag := range c.App.Command("add").Flags {
 		name := strings.Split(flag.GetName(), ",")[0]
 		if !c.IsSet(name) {
