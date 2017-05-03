@@ -97,13 +97,17 @@ func (util *AwsUtil) readLoadBalancers(region string) (map[string]string, error)
 	svc := elb.New(sess)
 
 	params := &elb.DescribeLoadBalancersInput{}
-	resp, err := svc.DescribeLoadBalancers(params)
+	loadBalancers := make([]*elb.LoadBalancerDescription, 0, 10)
+	err = svc.DescribeLoadBalancersPages(params, func(resp *elb.DescribeLoadBalancersOutput, lastPage bool) bool {
+		loadBalancers = append(loadBalancers, resp.LoadBalancerDescriptions...)
+		return lastPage
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	loadBalancerHostNames := make(map[string]string)
-	for _, loadBalancer := range resp.LoadBalancerDescriptions {
+	for _, loadBalancer := range loadBalancers {
 		loadBalancerHostNames[*loadBalancer.LoadBalancerName] = *loadBalancer.DNSName
 	}
 
@@ -121,15 +125,18 @@ func (util *AwsUtil) readInstances(region string, templ *template.Template) (map
 
 	svc := ec2.New(sess)
 
-	params := &ec2.DescribeInstancesInput{
-		MaxResults: aws.Int64(10),
-	}
-	resp, err := svc.DescribeInstances(params)
+	params := &ec2.DescribeInstancesInput{}
+	reservations := make([]*ec2.Reservation, 0, 10)
+	err = svc.DescribeInstancesPages(params, func(resp *ec2.DescribeInstancesOutput, lastPage bool) bool {
+		reservations = append(reservations, resp.Reservations...)
+
+		return lastPage
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	instanceIPs := parseReservations(resp.Reservations, templ)
+	instanceIPs := parseReservations(reservations, templ)
 	return instanceIPs, nil
 }
 
