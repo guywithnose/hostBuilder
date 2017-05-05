@@ -24,5 +24,4 @@ gometalinter --vendored-linters \
     --enable varcheck \
     --enable vet \
     --enable vetshadow \
-    --deadline=60s \
     awsUtil command config hosts

@@ -80,7 +80,8 @@ func TestCmdHostAddBadIP(t *testing.T) {
 	err := set.Parse([]string{"bar", "10.0.0.256", "hoo"})
 	assert.Nil(t, err)
 
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	err = CmdHostAdd(c)
 	assert.EqualError(t, err, "Unable to resolve 10.0.0.256")
 }
@@ -88,7 +89,8 @@ func TestCmdHostAddBadIP(t *testing.T) {
 func TestCmdHostAddUsage(t *testing.T) {
 	configFileName, set := setupBaseConfigFile(t)
 	defer removeFile(t, configFileName)
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	err := CmdHostAdd(c)
 	assert.EqualError(t, err, "Usage: \"hostBuilder host add {hostName} ({address} {IPName}|{globalIpName})\"")
 }
@@ -97,7 +99,8 @@ func TestCmdHostAddNoConfigFile(t *testing.T) {
 	set := flag.NewFlagSet("test", 0)
 	assert.Nil(t, set.Parse([]string{"bar", "10.0.0.2", "hoo"}))
 
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	err := CmdHostAdd(c)
 	assert.EqualError(t, err, "You must specify a config file")
 }
@@ -107,7 +110,8 @@ func TestCmdHostAddBadConfigFile(t *testing.T) {
 	assert.Nil(t, set.Parse([]string{"bar", "10.0.0.2", "hoo"}))
 
 	set.String("config", "/doesntexist", "doc")
-	c := cli.NewContext(nil, set, nil)
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
 	err := CmdHostAdd(c)
 	assert.EqualError(t, err, "open /doesntexist: no such file or directory")
 }

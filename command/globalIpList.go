@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"text/tabwriter"
 
@@ -25,7 +26,11 @@ func CmdGlobalIPList(c *cli.Context) error {
 		return err
 	}
 
-	w := tabwriter.NewWriter(c.App.Writer, 0, 0, 1, ' ', 0)
+	return printSortedIps(configData, c.App.Writer)
+}
+
+func printSortedIps(configData *config.HostsConfig, writer io.Writer) error {
+	w := tabwriter.NewWriter(writer, 0, 0, 1, ' ', 0)
 	ips := make([]string, 0, len(configData.GlobalIPs))
 	for ip := range configData.GlobalIPs {
 		ips = append(ips, ip)

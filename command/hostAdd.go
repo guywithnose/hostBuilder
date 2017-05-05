@@ -11,54 +11,44 @@ import (
 
 // CmdHostAdd adds an IP to a hostname
 func CmdHostAdd(c *cli.Context) error {
-	configData, err := loadConfig(c)
-	if err != nil {
-		return err
+	configData, configErr := loadConfig(c)
+	if configErr != nil {
+		return configErr
 	}
 
 	if c.NArg() == 3 {
-		hostName := c.Args().Get(0)
-		address, err := resolveAddress(c.Args().Get(1))
-		if err != nil {
-			return err
-		}
-
-		IPName := c.Args().Get(2)
-
-		err = addHost(configData, hostName, address, IPName, c.Bool("force"), c.App.ErrWriter)
-		if err != nil {
-			return err
-		}
-
-		return config.WriteConfig(c.GlobalString("config"), configData)
+		return addHost(configData, c, c.Bool("force"), c.App.ErrWriter)
 	}
 
 	if c.NArg() == 2 {
-		hostName := c.Args().Get(0)
-		globalIPName := c.Args().Get(1)
-
-		err = addGlobalIPHost(configData, hostName, globalIPName, c.App.ErrWriter)
-		if err != nil {
-			return err
-		}
-
-		return config.WriteConfig(c.GlobalString("config"), configData)
+		return addGlobalIPHost(configData, c)
 	}
 
 	return cli.NewExitError("Usage: \"hostBuilder host add {hostName} ({address} {IPName}|{globalIpName})\"", 1)
 }
 
-func addGlobalIPHost(configData *config.HostsConfig, hostName, globalIPName string, errWriter io.Writer) error {
+func addGlobalIPHost(configData *config.HostsConfig, c *cli.Context) error {
+	hostName := c.Args().Get(0)
+	globalIPName := c.Args().Get(1)
+
 	if _, exists := configData.Hosts[hostName]; exists {
 		return cli.NewExitError(fmt.Sprintf("IP %s already exists", hostName), 1)
 	}
 
 	configData.Hosts[hostName] = config.Host{Current: globalIPName}
 
-	return nil
+	return config.WriteConfig(c.GlobalString("config"), configData)
 }
 
-func addHost(configData *config.HostsConfig, hostName, address, IPName string, force bool, errWriter io.Writer) error {
+func addHost(configData *config.HostsConfig, c *cli.Context, force bool, errWriter io.Writer) error {
+	hostName := c.Args().Get(0)
+	address, err := resolveAddress(c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+
+	IPName := c.Args().Get(2)
+
 	if _, exists := configData.Hosts[hostName]; !exists {
 		configData.Hosts[hostName] = config.Host{Current: IPName, Options: map[string]string{IPName: address}}
 	} else {
@@ -73,7 +63,7 @@ func addHost(configData *config.HostsConfig, hostName, address, IPName string, f
 		configData.Hosts[hostName].Options[IPName] = address
 	}
 
-	return nil
+	return config.WriteConfig(c.GlobalString("config"), configData)
 }
 
 // CompleteHostAdd handles bash autocompletion for the 'host add' command

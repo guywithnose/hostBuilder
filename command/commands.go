@@ -1,12 +1,7 @@
-package main
+package command
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/guywithnose/hostBuilder/awsUtil"
-	"github.com/guywithnose/hostBuilder/command"
 	"github.com/urfave/cli"
 )
 
@@ -37,8 +32,8 @@ var Commands = []cli.Command{
 		Name:         "createConfig",
 		Aliases:      []string{"c"},
 		Usage:        "Create a config file from an existing hosts file",
-		Action:       command.CmdCreateConfig,
-		BashComplete: command.CompleteCreateConfig,
+		Action:       CmdCreateConfig,
+		BashComplete: CompleteCreateConfig,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "hostsFile, hosts",
@@ -51,8 +46,8 @@ var Commands = []cli.Command{
 		Name:         "build",
 		Aliases:      []string{"b"},
 		Usage:        "Builds your host file",
-		Action:       command.CmdBuild,
-		BashComplete: command.CompleteBuild,
+		Action:       CmdBuild,
+		BashComplete: CompleteBuild,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:   "output, o",
@@ -76,22 +71,22 @@ var Commands = []cli.Command{
 				Name:         "add",
 				Aliases:      []string{"a"},
 				Usage:        "Add a global IP to the configuration",
-				Action:       command.CmdGlobalIPAdd,
-				BashComplete: command.CompleteGlobalIPAdd,
+				Action:       CmdGlobalIPAdd,
+				BashComplete: CompleteGlobalIPAdd,
 				Flags:        []cli.Flag{forceFlag},
 			},
 			{
 				Name:         "remove",
 				Aliases:      []string{"r"},
 				Usage:        "Remove a global IP from the configuration",
-				Action:       command.CmdGlobalIPRemove,
-				BashComplete: command.CompleteGlobalIPRemove,
+				Action:       CmdGlobalIPRemove,
+				BashComplete: CompleteGlobalIPRemove,
 			},
 			{
 				Name:    "list",
 				Aliases: []string{"l"},
 				Usage:   "List global IPs in the configuration",
-				Action:  command.CmdGlobalIPList,
+				Action:  CmdGlobalIPList,
 			},
 		},
 	},
@@ -106,36 +101,36 @@ var Commands = []cli.Command{
 				Name:         "add",
 				Aliases:      []string{"a"},
 				Usage:        "Add an IP to a hostname",
-				Action:       command.CmdHostAdd,
-				BashComplete: command.CompleteHostAdd,
+				Action:       CmdHostAdd,
+				BashComplete: CompleteHostAdd,
 				Flags:        []cli.Flag{forceFlag},
 			},
 			{
 				Name:         "remove",
 				Aliases:      []string{"r"},
 				Usage:        "Remove an IP from a hostname",
-				Action:       command.CmdHostRemove,
-				BashComplete: command.CompleteHostRemove,
+				Action:       CmdHostRemove,
+				BashComplete: CompleteHostRemove,
 			},
 			{
 				Name:    "list",
 				Aliases: []string{"l"},
 				Usage:   "List the available hostnames",
-				Action:  command.CmdHostList,
+				Action:  CmdHostList,
 			},
 			{
 				Name:         "show",
 				Aliases:      []string{"sh"},
 				Usage:        "Describe the IPs on a hostname",
-				Action:       command.CmdHostShow,
-				BashComplete: command.CompleteHostShow,
+				Action:       CmdHostShow,
+				BashComplete: CompleteHostShow,
 			},
 			{
 				Name:         "set",
 				Aliases:      []string{"se"},
 				Usage:        "Set a hostname to a specific ip",
-				Action:       command.CmdHostSet,
-				BashComplete: command.CompleteHostSet,
+				Action:       CmdHostSet,
+				BashComplete: CompleteHostSet,
 			},
 		},
 	},
@@ -150,28 +145,28 @@ var Commands = []cli.Command{
 				Name:         "add",
 				Aliases:      []string{"a"},
 				Usage:        "Add a hostname to a group",
-				Action:       command.CmdGroupAdd,
-				BashComplete: command.CompleteGroupAdd,
+				Action:       CmdGroupAdd,
+				BashComplete: CompleteGroupAdd,
 			},
 			{
 				Name:    "list",
 				Aliases: []string{"l"},
 				Usage:   "List available groups",
-				Action:  command.CmdGroupList,
+				Action:  CmdGroupList,
 			},
 			{
 				Name:         "show",
 				Aliases:      []string{"sh"},
 				Usage:        "List the hostnames in a group",
-				Action:       command.CmdGroupShow,
-				BashComplete: command.CompleteHostShow,
+				Action:       CmdGroupShow,
+				BashComplete: CompleteHostShow,
 			},
 			{
 				Name:         "set",
 				Aliases:      []string{"se"},
 				Usage:        "Set the hostnames in a group to a global ip",
-				Action:       command.CmdGroupSet,
-				BashComplete: command.CompleteGroupSet,
+				Action:       CmdGroupSet,
+				BashComplete: CompleteGroupSet,
 			},
 		},
 	},
@@ -186,16 +181,16 @@ var Commands = []cli.Command{
 				Name:         "loadBalancers",
 				Aliases:      []string{"l", "lb"},
 				Usage:        "Add load balancer information to the configuration",
-				Action:       command.CmdAwsLoadBalancer(new(awsUtil.AwsUtil)),
-				BashComplete: command.CompleteAwsLoadBalancer(new(awsUtil.AwsUtil)),
+				Action:       CmdAwsLoadBalancer(new(awsUtil.AwsUtil)),
+				BashComplete: CompleteAwsLoadBalancer(new(awsUtil.AwsUtil)),
 				Flags:        []cli.Flag{profileFlag},
 			},
 			{
 				Name:         "instances",
 				Aliases:      []string{"i"},
 				Usage:        "Add instance information to the configuration",
-				Action:       command.CmdAwsInstances(new(awsUtil.AwsUtil)),
-				BashComplete: command.CompleteAwsInstances(new(awsUtil.AwsUtil)),
+				Action:       CmdAwsInstances(new(awsUtil.AwsUtil)),
+				BashComplete: CompleteAwsInstances(new(awsUtil.AwsUtil)),
 				Flags: []cli.Flag{
 					profileFlag,
 					cli.StringFlag{
@@ -208,35 +203,4 @@ var Commands = []cli.Command{
 			},
 		},
 	},
-}
-
-// CommandNotFound runs when hostBuilder is invoked with an invalid command
-func CommandNotFound(c *cli.Context, command string) {
-	fmt.Fprintf(c.App.Writer, "%s: '%s' is not a %s command. See '%s --help'.", c.App.Name, command, c.App.Name, c.App.Name)
-	os.Exit(2)
-}
-
-// RootCompletion prints the list of root commands as the root completion method
-// This is similar to the deafult method, but it excludes aliases
-func RootCompletion(c *cli.Context) {
-	lastParam := os.Args[len(os.Args)-2]
-	if lastParam == "--config" {
-		fmt.Println("fileCompletion")
-		return
-	}
-
-	for _, command := range c.App.Commands {
-		if command.Hidden {
-			continue
-		}
-
-		fmt.Fprintf(c.App.Writer, "%s:%s\n", command.Name, command.Usage)
-	}
-
-	for _, flag := range c.App.Flags {
-		name := strings.Split(flag.GetName(), ",")[0]
-		if !c.IsSet(name) {
-			fmt.Fprintf(c.App.Writer, "--%s\n", name)
-		}
-	}
 }
