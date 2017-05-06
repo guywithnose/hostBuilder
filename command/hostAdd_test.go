@@ -86,9 +86,11 @@ func TestCmdHostAddBadIP(t *testing.T) {
 }
 
 func TestCmdHostAddUsage(t *testing.T) {
-	c := cli.NewContext(nil, flag.NewFlagSet("test", 0), nil)
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	c := cli.NewContext(nil, set, nil)
 	err := CmdHostAdd(c)
-	assert.EqualError(t, err, "Usage: \"hostBuilder host add {hostName} {address} {IPName}\"")
+	assert.EqualError(t, err, "Usage: \"hostBuilder host add {hostName} ({address} {IPName}|{globalIpName})\"")
 }
 
 func TestCmdHostAddNoConfigFile(t *testing.T) {
@@ -124,6 +126,33 @@ func TestCmdHostAddNewHostName(t *testing.T) {
 
 	expectedHost := config.Host{Current: "hoo", Options: map[string]string{"hoo": hooIP}}
 	assert.Equal(t, expectedHost, modifiedConfigData.Hosts["barz"])
+}
+
+func TestCmdHostAddNewGlobalIpHostName(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	assert.Nil(t, set.Parse([]string{"barz", "baz"}))
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
+	assert.Nil(t, CmdHostAdd(c))
+
+	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
+	assert.Nil(t, err)
+
+	expectedHost := config.Host{Current: "baz", Options: map[string]string{}}
+	assert.Equal(t, expectedHost, modifiedConfigData.Hosts["barz"])
+}
+
+func TestCmdHostAddGlobalIpOverwriteFails(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	err := set.Parse([]string{"goo", "baz"})
+	assert.Nil(t, err)
+
+	app := cli.NewApp()
+	c := cli.NewContext(app, set, nil)
+	err = CmdHostAdd(c)
+	assert.EqualError(t, err, "IP goo already exists")
 }
 
 func TestCompleteHostAddHostName(t *testing.T) {

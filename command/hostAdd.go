@@ -11,29 +11,51 @@ import (
 
 // CmdHostAdd adds an IP to a hostname
 func CmdHostAdd(c *cli.Context) error {
-	if c.NArg() != 3 {
-		return cli.NewExitError("Usage: \"hostBuilder host add {hostName} {address} {IPName}\"", 1)
-	}
-
-	hostName := c.Args().Get(0)
-	address, err := resolveAddress(c.Args().Get(1))
-	if err != nil {
-		return err
-	}
-
-	IPName := c.Args().Get(2)
-
 	configData, err := loadConfig(c)
 	if err != nil {
 		return err
 	}
 
-	err = addHost(configData, hostName, address, IPName, c.Bool("force"), c.App.ErrWriter)
-	if err != nil {
-		return err
+	if c.NArg() == 3 {
+		hostName := c.Args().Get(0)
+		address, err := resolveAddress(c.Args().Get(1))
+		if err != nil {
+			return err
+		}
+
+		IPName := c.Args().Get(2)
+
+		err = addHost(configData, hostName, address, IPName, c.Bool("force"), c.App.ErrWriter)
+		if err != nil {
+			return err
+		}
+
+		return config.WriteConfig(c.GlobalString("config"), configData)
 	}
 
-	return config.WriteConfig(c.GlobalString("config"), configData)
+	if c.NArg() == 2 {
+		hostName := c.Args().Get(0)
+		globalIPName := c.Args().Get(1)
+
+		err = addGlobalIPHost(configData, hostName, globalIPName, c.App.ErrWriter)
+		if err != nil {
+			return err
+		}
+
+		return config.WriteConfig(c.GlobalString("config"), configData)
+	}
+
+	return cli.NewExitError("Usage: \"hostBuilder host add {hostName} ({address} {IPName}|{globalIpName})\"", 1)
+}
+
+func addGlobalIPHost(configData *config.HostsConfig, hostName, globalIPName string, errWriter io.Writer) error {
+	if _, exists := configData.Hosts[hostName]; exists {
+		return cli.NewExitError(fmt.Sprintf("IP %s already exists", hostName), 1)
+	}
+
+	configData.Hosts[hostName] = config.Host{Current: globalIPName}
+
+	return nil
 }
 
 func addHost(configData *config.HostsConfig, hostName, address, IPName string, force bool, errWriter io.Writer) error {
