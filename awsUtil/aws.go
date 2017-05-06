@@ -3,6 +3,7 @@ package awsUtil
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -145,9 +146,17 @@ func parseReservations(reservations []*ec2.Reservation, templ *template.Template
 	for _, reservation := range reservations {
 		instances := reservation.Instances
 		for _, instance := range instances {
-			name, ip, err := parseInstance(instance, templ)
+			name, err := parseInstance(instance, templ)
 			if err == nil {
-				instanceIPs[name] = ip
+				publicIP, err := getPublicIP(instance)
+				if err == nil {
+					instanceIPs[name] = publicIP
+				}
+
+				privateIP, err := getPrivateIP(instance)
+				if err == nil {
+					instanceIPs[fmt.Sprintf("%s-private", name)] = privateIP
+				}
 			}
 		}
 	}
@@ -155,18 +164,30 @@ func parseReservations(reservations []*ec2.Reservation, templ *template.Template
 	return instanceIPs
 }
 
-func parseInstance(instance *ec2.Instance, templ *template.Template) (string, string, error) {
+func getPublicIP(instance *ec2.Instance) (string, error) {
 	if instance.PublicIpAddress == nil {
-		return "", "", errors.New("instance has no ip address")
+		return "", errors.New("instance has no public ip address")
 	}
 
+	return *instance.PublicIpAddress, nil
+}
+
+func getPrivateIP(instance *ec2.Instance) (string, error) {
+	if instance.PrivateIpAddress == nil {
+		return "", errors.New("instance has no private ip address")
+	}
+
+	return *instance.PrivateIpAddress, nil
+}
+
+func parseInstance(instance *ec2.Instance, templ *template.Template) (string, error) {
 	var buffer bytes.Buffer
 	err := templ.Execute(&buffer, instance)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return buffer.String(), *instance.PublicIpAddress, nil
+	return buffer.String(), nil
 }
 
 func (util *AwsUtil) getRegions() ([]string, error) {
