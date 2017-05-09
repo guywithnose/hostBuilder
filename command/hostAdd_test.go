@@ -180,7 +180,7 @@ func TestCompleteHostAddOptionName(t *testing.T) {
 	c := cli.NewContext(app, set, nil)
 	CompleteHostAdd(c)
 
-	assert.Equal(t, "10.0.0.4:baz\n10.0.0.7:bazz\n10.0.0.8:foop\n", writer.String())
+	assert.Equal(t, "10.0.0.4:baz\n10.0.0.7:bazz\n10.0.0.8:foop\nbaz\n", writer.String())
 }
 
 func TestCompleteHostAddIP(t *testing.T) {

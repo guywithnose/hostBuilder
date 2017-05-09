@@ -80,6 +80,10 @@ func CompleteHostAdd(c *cli.Context) {
 		for _, IP := range IPs {
 			fmt.Fprintf(c.App.Writer, "%s:%s\n", IP, IPMap[IP])
 		}
+
+		for _, globalIPName := range sortGlobalIPNames(configData) {
+			fmt.Fprintf(c.App.Writer, "%s\n", globalIPName)
+		}
 	} else if c.NArg() == 2 {
 		fmt.Fprintln(c.App.Writer, strings.Join(sortAllOptions(configData), "\n"))
 	}
