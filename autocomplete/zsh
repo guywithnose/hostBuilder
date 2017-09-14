@@ -1,10 +1,9 @@
-_cli_zsh_autocomplete() {
+_host_builder_zsh_autocomplete() {
 
   local -a opts
   opts=("${(@f)$(hostBuilder ${words[@]:1:#words[@]-1} --generate-bash-completion)}")
 
-  if [[ "${opts}" == 'fileCompletion' ]]
-  then
+  if [[ "${opts}" == 'fileCompletion' ]]; then
       _files
       return
   fi
@@ -14,4 +13,5 @@ _cli_zsh_autocomplete() {
   return
 }
 
-compdef _cli_zsh_autocomplete hostBuilder
+compdef _host_builder_zsh_autocomplete hostBuilder
+compdef _host_builder_zsh_autocomplete hb
