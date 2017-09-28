@@ -23,6 +23,10 @@ func CmdGroupAdd(c *cli.Context) error {
 	}
 
 	if _, exists := configData.Groups[groupName]; !exists {
+		if configData.Groups == nil {
+			configData.Groups = map[string][]string{}
+		}
+
 		configData.Groups[groupName] = []string{hostName}
 	} else {
 		if _, exists := configData.Hosts[hostName]; !exists {

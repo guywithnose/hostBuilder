@@ -2,6 +2,7 @@ package command
 
 import (
 	"flag"
+	"io/ioutil"
 	"testing"
 
 	"github.com/guywithnose/hostBuilder/config"
@@ -46,6 +47,36 @@ func TestCmdGroupAddBadConfigFile(t *testing.T) {
 	c := cli.NewContext(nil, set, nil)
 	err := CmdGroupAdd(c)
 	assert.EqualError(t, err, "open /doesntexist: no such file or directory")
+}
+
+func TestCmdGroupAddFirstGroup(t *testing.T) {
+	configFile, err := ioutil.TempFile("/tmp", "config")
+	assert.Nil(t, err)
+
+	configData := &config.HostsConfig{
+		Hosts: map[string]config.Host{
+			"bar":     {Current: hostIgnore},
+			"baz.com": {Current: "baz", Options: map[string]string{"bazz": "10.0.0.7"}},
+			"goo":     {Current: "foop", Options: map[string]string{"foop": "10.0.0.8"}},
+		},
+		GlobalIPs: map[string]string{"baz": "10.0.0.4"},
+	}
+
+	err = config.WriteConfig(configFile.Name(), configData)
+	assert.Nil(t, err)
+
+	set := flag.NewFlagSet("test", 0)
+	set.String("config", configFile.Name(), "doc")
+
+	defer removeFile(t, configFile.Name())
+	assert.Nil(t, set.Parse([]string{"food", "bar"}))
+	c := cli.NewContext(nil, set, nil)
+	assert.Nil(t, CmdGroupAdd(c))
+
+	modifiedConfigData, err := config.LoadConfigFromFile(configFile.Name())
+	assert.Nil(t, err)
+
+	assert.Equal(t, []string{"bar"}, modifiedConfigData.Groups["food"])
 }
 
 func TestCmdGroupAddBadGroupName(t *testing.T) {
