@@ -25,10 +25,7 @@ func CmdGroupShow(c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("Group %s does not exist", groupName), 1)
 	}
 
-	hostNames := make([]string, 0, len(configData.Groups[groupName]))
-	for hostName := range configData.Groups {
-		hostNames = append(hostNames, hostName)
-	}
+	hostNames := configData.Groups[groupName]
 
 	sort.Strings(hostNames)
 

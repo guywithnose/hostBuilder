@@ -17,7 +17,7 @@ func TestCmdGroupShow(t *testing.T) {
 	c := cli.NewContext(app, set, nil)
 	assert.Nil(t, CmdGroupShow(c))
 
-	assert.Equal(t, "foo\n", writer.String())
+	assert.Equal(t, "baz.com\ngoo\n", writer.String())
 }
 
 func TestCmdGroupShowUsage(t *testing.T) {

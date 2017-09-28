@@ -159,7 +159,7 @@ var Commands = []cli.Command{
 				Aliases:      []string{"sh"},
 				Usage:        "List the hostnames in a group",
 				Action:       CmdGroupShow,
-				BashComplete: CompleteHostShow,
+				BashComplete: CompleteGroupShow,
 			},
 			{
 				Name:         "set",
