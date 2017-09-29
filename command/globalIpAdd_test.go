@@ -138,6 +138,44 @@ func TestCompleteGlobalIPAdd(t *testing.T) {
 	assert.Equal(t, "--force\n", writer.String())
 }
 
+func TestCompleteGlobalIPAddForce(t *testing.T) {
+	configFile, err := ioutil.TempFile("/tmp", "config")
+	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
+	configData := &config.HostsConfig{GlobalIPs: map[string]string{"abc": "127.0.0.1"}}
+	err = config.WriteConfig(configFile.Name(), configData)
+	assert.Nil(t, err)
+	set := flag.NewFlagSet("test", 0)
+	set.String("config", configFile.Name(), "doc")
+	set.Bool("force", true, "")
+	app, writer := appWithWriter()
+	app.Commands = []cli.Command{{Name: "add"}}
+	c := cli.NewContext(app, set, nil)
+	CompleteGlobalIPAdd(c)
+
+	assert.Equal(t, "abc\n", writer.String())
+}
+
+func TestCompleteGlobalIPAddIPs(t *testing.T) {
+	configFile, err := ioutil.TempFile("/tmp", "config")
+	assert.Nil(t, err)
+	defer removeFile(t, configFile.Name())
+	configData := &config.HostsConfig{GlobalIPs: map[string]string{"abc": "127.0.0.1"}}
+	err = config.WriteConfig(configFile.Name(), configData)
+	assert.Nil(t, err)
+	set := flag.NewFlagSet("test", 0)
+	set.String("config", configFile.Name(), "doc")
+	set.Bool("force", true, "")
+	err = set.Parse([]string{"abc"})
+	assert.Nil(t, err)
+	app, writer := appWithWriter()
+	app.Commands = []cli.Command{{Name: "add"}}
+	c := cli.NewContext(app, set, nil)
+	CompleteGlobalIPAdd(c)
+
+	assert.Equal(t, "127.0.0.1\n", writer.String())
+}
+
 func getValidAddArgSet() (*flag.FlagSet, error) {
 	set := flag.NewFlagSet("test", 0)
 	abcIP := "10.0.0.2"

@@ -40,6 +40,20 @@ func CmdGlobalIPAdd(c *cli.Context) error {
 
 // CompleteGlobalIPAdd handles bash autocompletion for the 'globalIP add' command
 func CompleteGlobalIPAdd(c *cli.Context) {
+	configData, err := loadConfig(c)
+	if err == nil {
+		IPNames := sortGlobalIPNames(configData)
+		if c.NArg() == 0 && c.Bool("force") {
+			for _, IPName := range IPNames {
+				fmt.Fprintf(c.App.Writer, "%s\n", IPName)
+			}
+		} else if c.NArg() == 1 {
+			for _, IPName := range IPNames {
+				fmt.Fprintf(c.App.Writer, "%s\n", configData.GlobalIPs[IPName])
+			}
+		}
+	}
+
 	for _, flag := range c.App.Command("add").Flags {
 		name := strings.Split(flag.GetName(), ",")[0]
 		if !c.IsSet(name) {
