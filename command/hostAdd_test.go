@@ -147,6 +147,15 @@ func TestCmdHostAddNewGlobalIpHostName(t *testing.T) {
 	assert.Equal(t, expectedHost, modifiedConfigData.Hosts["barz"])
 }
 
+func TestCmdHostAddNewInvalidGlobalIpHostName(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+	assert.Nil(t, set.Parse([]string{"barz", "notAGlobalIp"}))
+	app, _ := appWithErrWriter()
+	c := cli.NewContext(app, set, nil)
+	assert.EqualError(t, CmdHostAdd(c), "GlobalIP notAGlobalIp does not exist.")
+}
+
 func TestCmdHostAddGlobalIpOverwriteFails(t *testing.T) {
 	configFileName, set := setupBaseConfigFile(t)
 	defer removeFile(t, configFileName)

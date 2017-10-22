@@ -35,6 +35,10 @@ func addGlobalIPHost(configData *config.HostsConfig, c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("IP %s already exists", hostName), 1)
 	}
 
+	if _, exists := configData.GlobalIPs[globalIPName]; !exists {
+		return cli.NewExitError(fmt.Sprintf("GlobalIP %s does not exist.", globalIPName), 1)
+	}
+
 	configData.Hosts[hostName] = config.Host{Current: globalIPName}
 
 	return config.WriteConfig(c.GlobalString("config"), configData)
