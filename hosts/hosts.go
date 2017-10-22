@@ -81,13 +81,11 @@ func ReadHostsFile(fileName string) (map[string][]string, error) {
 	hosts := make(map[string][]string)
 	for _, line := range hostsLines {
 		ip, hostnames := parseHostLine(line)
-		if hostnames != nil {
-			for _, hostname := range hostnames {
-				if _, exists := hosts[hostname]; exists {
-					hosts[hostname] = append(hosts[hostname], ip)
-				} else {
-					hosts[hostname] = []string{ip}
-				}
+		for _, hostname := range hostnames {
+			if _, exists := hosts[hostname]; exists {
+				hosts[hostname] = append(hosts[hostname], ip)
+			} else {
+				hosts[hostname] = []string{ip}
 			}
 		}
 	}
