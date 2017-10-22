@@ -23,6 +23,20 @@ func TestCmdGroupSet(t *testing.T) {
 	assert.Equal(t, "baz", modifiedConfigData.Hosts["goo"].Current, "goo was not set to baz")
 }
 
+func TestCmdGroupSetIgnore(t *testing.T) {
+	configFileName, set := setupBaseConfigFile(t)
+	defer removeFile(t, configFileName)
+
+	assert.Nil(t, set.Parse([]string{"foo", "ignore"}))
+	c := cli.NewContext(nil, set, nil)
+	assert.Nil(t, CmdGroupSet(c))
+
+	modifiedConfigData, err := config.LoadConfigFromFile(configFileName)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "ignore", modifiedConfigData.Hosts["goo"].Current, "goo was not set to ignore")
+}
+
 func TestCmdGroupSetUsage(t *testing.T) {
 	c := cli.NewContext(nil, flag.NewFlagSet("test", 0), nil)
 	err := CmdGroupSet(c)

@@ -26,7 +26,7 @@ func CmdGroupSet(c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("Group %s does not exist", groupName), 1)
 	}
 
-	if _, exists := configData.GlobalIPs[globalIPName]; !exists {
+	if _, exists := configData.GlobalIPs[globalIPName]; !exists && globalIPName != "ignore" {
 		return cli.NewExitError(fmt.Sprintf("Global IP %s does not exist", globalIPName), 1)
 	}
 
